@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虫さんトコトコレース</title>
+    <link rel="stylesheet" href="style.css?v=7">
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div id="app">
+        <header>
+            <h1>🐛 虫さんトコトコレース 🏁</h1>
+            <div class="header-right">
+                <div class="wallet-display">
+                    💰 所持金: <span id="wallet-amount">10000</span>円
+                    <span id="loan-display" class="loan-display hidden"> (借金: <span id="loan-amount">0</span>円)</span>
+                </div>
+                <button id="stats-toggle-btn" class="btn-stats" title="統計を見る">📊</button>
+            </div>
+        </header>
+
+        <main>
+            <!-- Home Screen -->
+            <section id="home-screen" class="screen active">
+                <div class="home-content">
+                    <div class="title-logo">🐛 虫さんトコトコレース 🏁</div>
+                    <p class="game-desc">個性豊かな虫さんたちのレースバトル！<br>推しの虫を見つけて大金持ちを目指そう！</p>
+                    <div class="home-stats-preview">
+                        <div class="stat-item">
+                            <span class="stat-label">総レース数</span>
+                            <span class="stat-value" id="home-total-races">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">勝率</span>
+                            <span class="stat-value" id="home-win-rate">0%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">最高獲得</span>
+                            <span class="stat-value" id="home-max-win">0円</span>
+                        </div>
+                    </div>
+                    <button id="game-start-btn" class="btn-primary btn-large">ゲームスタート！</button>
+                </div>
+            </section>
+
+            <!-- Statistics Modal -->
+            <div id="stats-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>📊 統計情報</h2>
+                        <button id="stats-close-btn" class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">🏁</div>
+                                <div class="stat-number" id="stat-total-races">0</div>
+                                <div class="stat-label">総レース数</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">🎯</div>
+                                <div class="stat-number" id="stat-wins">0</div>
+                                <div class="stat-label">勝利数</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">📈</div>
+                                <div class="stat-number" id="stat-win-rate">0%</div>
+                                <div class="stat-label">勝率</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">💰</div>
+                                <div class="stat-number" id="stat-total-earned">0円</div>
+                                <div class="stat-label">総獲得金額</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">💎</div>
+                                <div class="stat-number" id="stat-max-win">0円</div>
+                                <div class="stat-label">最高獲得金額</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">🎲</div>
+                                <div class="stat-number" id="stat-total-bet">0円</div>
+                                <div class="stat-label">総賭け金額</div>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <h3>🏆 優勝回数ランキング</h3>
+                            <div id="stat-winners-list" class="winners-list">
+                                <!-- Will be populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course Screen -->
+            <section id="course-screen" class="screen hidden">
+                <h2>📍 本日のレース会場</h2>
+                <div class="course-reveal-card">
+                    <h3 id="reveal-course-name">???</h3>
+                    <p id="reveal-course-desc">...</p>
+                    <div class="reveal-weather">
+                        <p>天候:</p>
+                        <div id="reveal-weather-icon"></div>
+                        <span id="reveal-weather-text">???</span>
+                    </div>
+                </div>
+                <button id="to-betting-btn" class="btn-primary">出走虫を見る</button>
+            </section>
+
+            <!-- Betting Screen -->
+            <section id="betting-screen" class="screen hidden">
+                <div class="betting-header">
+                    <h2>🎫 どの虫さんに賭ける？</h2>
+                    <div id="loan-bet-notice" class="loan-bet-notice hidden">
+                        <div class="loan-notice-content">
+                            <strong>⚠️ 所持金が100円未満です</strong>
+                            <p>借金ベットで500円固定で賭けることができます。負けた場合は借金になります。</p>
+                        </div>
+                    </div>
+                    <div class="quick-bet-controls">
+                        <span class="quick-bet-label">クイックベット:</span>
+                        <button class="btn-quick-bet" data-amount="100">100円</button>
+                        <button class="btn-quick-bet" data-amount="500">500円</button>
+                        <button class="btn-quick-bet" data-amount="1000">1000円</button>
+                        <button class="btn-quick-bet" data-amount="5000">5000円</button>
+                        <button class="btn-quick-bet" data-amount="all">全額</button>
+                    </div>
+                </div>
+                <div class="bug-list" id="betting-bug-list">
+                    <!-- Bug items will be injected here -->
+                </div>
+            </section>
+
+            <!-- Race Screen -->
+            <section id="race-screen" class="screen hidden">
+                <div class="race-container">
+                    <!-- Left Panel: Status & Logs -->
+                    <div class="race-left-panel">
+                        <div class="race-header-left">
+                            <h2>レース状況</h2>
+                        </div>
+                        <div class="weather-box" id="weather-box">
+                            <!-- Weather Info injected here -->
+                        </div>
+                        <div id="race-status-list" class="race-status-list">
+                            <!-- Bug Status Rows injected here -->
+                        </div>
+                        <!-- ★ボタンエリア★ -->
+                        <div class="race-controls-left"
+                            style="margin-top: auto; padding: 10px; border-top: 1px solid #eee; background: white;">
+                            <button id="next-turn-btn" class="btn-primary"
+                                style="width: 100%; padding: 12px; font-size: 1.1rem;">次へ進む！</button>
+                        </div>
+                    </div>
+
+                    <!-- Right Panel: Track & Weather -->
+                    <div class="race-right-panel">
+                        <div class="track-container">
+                            <div class="track-header">
+                                <div class="race-rank" id="race-rank">
+                                    <!-- Rank display will be injected here -->
+                                </div>
+                            </div>
+                            <div class="track" id="race-track">
+                                <div class="track-distance-marker marker-0">0cm</div>
+                                <div class="track-distance-marker marker-25">25cm</div>
+                                <div class="track-distance-marker marker-50">50cm</div>
+                                <div class="track-distance-marker marker-75">75cm</div>
+                                <div class="track-distance-marker marker-100">100cm</div>
+                                <div class="grid-line" style="left: 0%"></div>
+                                <div class="grid-line" style="left: 25%"></div>
+                                <div class="grid-line" style="left: 50%"></div>
+                                <div class="grid-line" style="left: 75%"></div>
+                                <div class="grid-line" style="left: 100%"></div>
+                                <!-- Lanes and Bugs injected here -->
+                                <div class="goal-line">GOAL</div>
+                            </div>
+                        </div>
+                        <!-- 行動ログパネルを削除しました -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Result Screen -->
+            <section id="result-screen" class="screen hidden">
+                <div class="result-container">
+                    <h2 class="result-title">🏆 結果発表 🏆</h2>
+                    <div class="result-content">
+                        <div id="winner-announcement" class="winner-announcement">優勝: ???</div>
+                        <div id="payout-info" class="payout-info">
+                            <!-- Payout details -->
+                        </div>
+                        <div id="result-stats" class="result-stats">
+                            <!-- Additional stats will be shown here -->
+                        </div>
+                        <div class="result-final-ranking" id="result-final-ranking">
+                            <!-- Final ranking will be shown here -->
+                        </div>
+                    </div>
+                    <div class="result-actions">
+                        <button id="next-race-btn" class="btn-primary btn-large">次のレースへ</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script type="module" src="main.js"></script>
+</body>
+
+</html>
