@@ -28,9 +28,8 @@ export function updateWalletDisplay() {
     localStorage.setItem('bugsRaceWallet', gameState.wallet);
 }
 
-// ログ出力関数を大幅に変更
+// ログ出力関数（各虫の下のボックスに出力）
 export function logMessage(bugId, msg) {
-    // ターゲットとなるログボックスを取得
     let targets = [];
 
     if (bugId) {
@@ -45,13 +44,8 @@ export function logMessage(bugId, msg) {
     targets.forEach(target => {
         const p = document.createElement('div');
         p.className = 'log-entry';
-
-        // バグ名が含まれていないメッセージの場合のみ名前を付けるなどの処理は
-        // 狭いスペースでは省略し、メッセージ本文を重視
         p.textContent = msg;
-
         target.appendChild(p);
-        // 常に最新（一番下）を表示
         target.scrollTop = target.scrollHeight;
     });
 }
@@ -60,18 +54,15 @@ export function renderRaceTrack() {
     El.raceStatusList.innerHTML = '';
     const oldRacers = El.raceTrack.querySelectorAll('.bug-racer');
     oldRacers.forEach(r => r.remove());
-    const oldLanes = El.raceTrack.querySelectorAll('.lane');
-    oldLanes.forEach(l => l.remove());
     const oldRankDisplay = document.getElementById('race-rank');
     if (oldRankDisplay) oldRankDisplay.innerHTML = '';
 
     gameState.bugs.forEach((bug, index) => {
-        // Left Panel
+        // Left Panel: Status Row
         const row = document.createElement('div');
         row.className = 'status-row';
         row.id = `status-${bug.id}`;
 
-        // HTML構造を変更：体力バーの下にログ用ボックスを追加
         row.innerHTML = `
             <div class="status-main-info">
                 <div class="status-name-wrap">
@@ -84,23 +75,19 @@ export function renderRaceTrack() {
                 <span>HP ${bug.currentHp}/${bug.maxHp}</span>
                 <div class="status-hp-bar"><div class="status-hp-fill" id="status-hp-${bug.id}" style="width: 100%"></div></div>
             </div>
-            <!-- ここにログボックスを追加 -->
+            <!-- 行動ログ表示エリア -->
             <div class="status-log" id="status-log-${bug.id}"></div>
         `;
         El.raceStatusList.appendChild(row);
 
-        // Right Panel
-        const laneDiv = document.createElement('div');
-        laneDiv.className = 'lane';
-
-        const racerDiv = document.createElement('div');
-        racerDiv.className = 'bug-racer';
-        racerDiv.id = `racer-${bug.id}`;
-        racerDiv.style.left = '0%';
-        racerDiv.innerHTML = `${bug.icon}`;
-
-        laneDiv.appendChild(racerDiv);
-        El.raceTrack.appendChild(laneDiv);
+        // Right Panel: Racer on Track
+        const racer = document.createElement('div');
+        racer.className = 'bug-racer';
+        racer.id = `racer-${bug.id}`;
+        racer.style.top = `${index * 60 + 30}px`;
+        racer.style.left = '0%';
+        racer.innerHTML = `${bug.icon}`;
+        El.raceTrack.appendChild(racer);
     });
 
     updateRaceRanking();
@@ -111,6 +98,13 @@ export function updateRacerVisuals(bug) {
     if (racer) {
         const visualPercent = (bug.currentPos / RACE_DISTANCE) * 100;
         racer.style.left = `${visualPercent}%`;
+
+        // ★追加: アイコン（画像）が変わっていたら画面を更新する処理
+        // これがないと、データ上で「成虫」になっても画面は「幼虫」のままになります
+        if (racer.innerHTML !== bug.icon) {
+            racer.innerHTML = bug.icon;
+        }
+
         if (!bug.isDead) {
             racer.classList.add('moving');
             setTimeout(() => racer.classList.remove('moving'), 500);
@@ -122,6 +116,12 @@ export function updateRacerVisuals(bug) {
 
     const statusRow = document.getElementById(`status-${bug.id}`);
     if (statusRow) {
+        // 名前も更新（幼虫→成虫などで名前が変わる場合に対応）
+        const nameEl = statusRow.querySelector('.status-name');
+        if (nameEl && nameEl.textContent !== bug.name) {
+            nameEl.textContent = bug.name;
+        }
+
         statusRow.querySelector('.status-dist').textContent = `${Math.floor(bug.currentPos)}cm`;
         statusRow.querySelector('.status-hp-bar-container span').textContent = `HP ${bug.currentHp}/${bug.maxHp}`;
         const hpPercent = (bug.currentHp / bug.maxHp) * 100;
@@ -188,9 +188,12 @@ export function showAttackVisual(attackerId, targetId, color = null) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.classList.add('attack-arrow-svg');
 
+    // マーカーIDをユニークにする
+    const markerId = `arrowhead-${attackerId}-${targetId}-${Date.now()}`;
+
     const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
     const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
-    marker.setAttribute("id", `arrowhead-${attackerId}-${targetId}`);
+    marker.setAttribute("id", markerId);
     marker.setAttribute("markerWidth", "10");
     marker.setAttribute("markerHeight", "7");
     marker.setAttribute("refX", "9");
@@ -212,7 +215,7 @@ export function showAttackVisual(attackerId, targetId, color = null) {
     line.setAttribute("x2", x2);
     line.setAttribute("y2", y2);
     line.classList.add('attack-arrow-line');
-    line.setAttribute("marker-end", `url(#arrowhead-${attackerId}-${targetId})`);
+    line.setAttribute("marker-end", `url(#${markerId})`);
     if (color) line.style.stroke = color;
 
     svg.appendChild(line);

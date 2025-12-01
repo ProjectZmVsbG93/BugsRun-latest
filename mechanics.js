@@ -149,12 +149,12 @@ function executeBugAction(bug) {
     switch (skill) {
         case '前進':
             let baseMove = bug.speed;
-            if (bug.id === 'silverfish') baseMove = 35 + Math.random() * 10;
+            if (bug.id === 'silverfish') baseMove = 25 + Math.random() * 10;
             if (bug.id === 'mantis') baseMove = 5 + Math.random() * 10;
             if (bug.id === 'isopod') baseMove = 5 + Math.random() * 5;
             if (bug.id === 'shrimp') baseMove = 10 + Math.random() * 10;
             if (bug.id === 'ladybug') baseMove = 15;
-            if (bug.id === 'antlion') baseMove = 20 + Math.random() * 10;
+            if (bug.id === 'antlion') baseMove = 12 + Math.random() * 10;
             if (bug.id === 'ant') baseMove = 15;
             if (bug.id === 'beetle') baseMove = 5 + Math.random() * 5;
             if (bug.id === 'worm') baseMove = 10 + Math.random() * 5;
@@ -165,7 +165,7 @@ function executeBugAction(bug) {
             if (bug.id === 'centipede') baseMove = 10 + Math.random() * 5;
             let move = baseMove * condMult;
             if (bug.id === 'antlion' && bug.counters.doubleMove) { move *= 2; bug.counters.doubleMove = false; }
-            if (bug.id === 'dung') { const growth = Math.floor(move / 5); bug.counters.poopSize += growth; UI.logMessage(bug.id, `${bug.name}のフンが大きくなった(+${growth}cm)`); }
+            if (bug.id === 'dung') { const growth = Math.floor(move / 2); bug.counters.poopSize += growth; UI.logMessage(bug.id, `${bug.name}のフンが大きくなった(+${growth}cm)`); }
             applyWeatherMoveMod(bug, move); break;
         case 'ぶつかる':
             const targetS = getRandomTarget(bug);
@@ -180,15 +180,29 @@ function executeBugAction(bug) {
             if (leaders.length > 0) { const target = leaders[0]; bug.currentPos = target.currentPos; UI.logMessage(bug.id, `${bug.name}が羽ばたいて${target.name}に追いついた！`); }
             else UI.logMessage(bug.id, `${bug.name}は羽ばたいたが誰も前にいなかった...`); break;
         case '捕食':
-            if (Math.random() < 0.01 * condMult) { const prey = getRandomTarget(bug); if (prey) { killBug(prey, 'オオカマキリに捕食された'); UI.logMessage(bug.id, `${bug.name}の捕食成功！`); } }
+            if (Math.random() < 0.05 * condMult) {
+                const prey = getRandomTarget(bug);
+                if (prey) {
+                    // ★追加: 捕食成功時の黄色い矢印
+                    UI.showAttackVisual(bug.id, prey.id, '#ffeb3b');
+                    killBug(prey, 'オオカマキリに捕食された');
+                    UI.logMessage(bug.id, `${bug.name}の捕食成功！`);
+                }
+            }
             else UI.logMessage(bug.id, `${bug.name}は捕食を試みたが失敗...`); break;
         case 'オトモを呼ぶ': bug.counters.minions++; UI.logMessage(bug.id, `${bug.name}はオトモを呼んだ！(現在${bug.counters.minions}匹)`);
-            if (Math.random() < 0.5) attackTarget(bug, 1, 'オトモの攻撃'); else { bug.currentPos += 5; UI.logMessage(bug.id, `オトモが${bug.name}を運んだ！(+5cm)`); } break;
-        case 'ワイはグソクムシ界の大王やぞ！！！': healBug(bug, 4); UI.logMessage(bug.id, `${bug.name}「ワイはグソクムシ界の大王やぞ！！！」(${bug.name}は回復した(+4))`); break;
+            if (Math.random() < 0.5) attackTarget(bug, 2, 'オトモの攻撃'); else { bug.currentPos += 10; UI.logMessage(bug.id, `オトモが${bug.name}を運んだ！(+10cm)`); } break;
+        case 'ワイはグソクムシ界の大王やぞ！！！': healBug(bug, 2); UI.logMessage(bug.id, `${bug.name}「ワイはグソクムシ界の大王やぞ！！！」(${bug.name}は回復した(+2))`); break;
         case 'ハイパーシャコパンチ': attackTarget(bug, 5, 'ハイパーシャコパンチ'); break;
         case '衝撃波':
             const targetsW = getOtherAliveBugs(bug);
-            if (targetsW.length > 0) { const dmgPer = Math.floor(9 / targetsW.length) || 1; targetsW.forEach(t => { UI.showAttackVisual(bug.id, t.id); damageBug(t, dmgPer); }); UI.logMessage(bug.id, `${bug.name}の衝撃波！(全体に約${dmgPer}ダメ)`); } break;
+            if (targetsW.length > 0) {
+                const dmgPer = Math.floor(9 / targetsW.length) || 1;
+                // ↓ 第3引数に色コードを追加しました
+                targetsW.forEach(t => { UI.showAttackVisual(bug.id, t.id, '#4FC3F7'); damageBug(t, dmgPer); });
+                UI.logMessage(bug.id, `${bug.name}の衝撃波！(全体に約${dmgPer}ダメ)`);
+            }
+            break;
         case '閃光弾': bug.isInvincible = true; bug.currentPos += 10; UI.logMessage(bug.id, `${bug.name}の閃光弾！(無敵＆+10cm)`); break;
         case '回復': healBug(bug, 1); UI.logMessage(bug.id, `${bug.name}は回復した(+1)`); break;
         case '北斗七星ゲージを貯める':
@@ -201,23 +215,29 @@ function executeBugAction(bug) {
         case '北斗有情破顔拳':
             if (bug.counters.northStar >= 7) { UI.logMessage(bug.id, `${bug.name}「北斗有情破顔拳！！！」`); getOtherAliveBugs(bug).forEach(t => { UI.showAttackVisual(bug.id, t.id, '#ffeb3b'); killBug(t, '北斗有情破顔拳で爆発'); }); bug.counters.northStar = 0; }
             else UI.logMessage(bug.id, `${bug.name}は技を放とうとしたがゲージが足りない...`); break;
-        case '残悔積歩拳': const targetZ = getRandomTarget(bug); if (targetZ) { UI.showAttackVisual(bug.id, targetZ.id); targetZ.currentPos = Math.max(0, targetZ.currentPos - 15); UI.logMessage(bug.id, `${bug.name}の残悔積歩拳！${targetZ.name}を15cm後退させた！`); } break;
+        case '残悔積歩拳': const targetZ = getRandomTarget(bug); if (targetZ) { UI.showAttackVisual(bug.id, targetZ.id, '#8D6E63'); targetZ.currentPos = Math.max(0, targetZ.currentPos - 15); UI.logMessage(bug.id, `${bug.name}の残悔積歩拳！${targetZ.name}を15cm後退させた！`); } break;
         case '突進': attackTarget(bug, 1, '突進'); break;
         case '翅の手入れ': bug.counters.doubleMove = true; UI.logMessage(bug.id, `${bug.name}は翅の手入れをしている(次ターン移動2倍)`); break;
         case '仲間を呼ぶ': bug.counters.minions += Math.floor(Math.random() * 3) + 1; UI.logMessage(bug.id, `${bug.name}は仲間を呼んだ！(現在${bug.counters.minions}匹)`); break;
         case '仲間と一緒に前進する': applyWeatherMoveMod(bug, 5 * bug.counters.minions); UI.logMessage(bug.id, `${bug.name}は仲間と進んだ！`); break;
         case '仲間と一緒に攻撃する': attackTarget(bug, bug.counters.minions, '集団攻撃'); break;
         case '突き刺す': attackTarget(bug, 4, '突き刺し'); break;
-        case '突き飛ばす': const targetP = getRandomTarget(bug); if (targetP) { UI.showAttackVisual(bug.id, targetP.id); targetP.currentPos = Math.max(0, targetP.currentPos - 15); UI.logMessage(bug.id, `${bug.name}は${targetP.name}を突き飛ばした！(-15cm)`); } break;
-        case '吹き飛ばす': const targetB = getRandomTarget(bug); if (targetB) { UI.showAttackVisual(bug.id, targetB.id); targetB.currentPos = Math.max(0, targetB.currentPos - 25); UI.logMessage(bug.id, `${bug.name}は${targetB.name}を吹き飛ばした！(-25cm)`); } break;
+        case '突き飛ばす': const targetP = getRandomTarget(bug); if (targetP) { UI.showAttackVisual(bug.id, targetP.id, '#8D6E63'); targetP.currentPos = Math.max(0, targetP.currentPos - 15); UI.logMessage(bug.id, `${bug.name}は${targetP.name}を突き飛ばした！(-15cm)`); } break;
+        case '吹き飛ばす': const targetB = getRandomTarget(bug); if (targetB) { UI.showAttackVisual(bug.id, targetB.id, '#8D6E63'); targetB.currentPos = Math.max(0, targetB.currentPos - 25); UI.logMessage(bug.id, `${bug.name}は${targetB.name}を吹き飛ばした！(-25cm)`); } break;
         case '巻き付く': attackTarget(bug, 3, '巻き付き'); break;
         case '土を食べる': healBug(bug, 3); UI.logMessage(bug.id, `${bug.name}は土を食べて回復した(+3)`); break;
         case '土に潜る': bug.isInvincible = true; applyWeatherMoveMod(bug, 10); UI.logMessage(bug.id, `${bug.name}は土に潜って進んだ！(無敵&10cm)`); break;
-        case '落とし穴を掘る': const targetH = getRandomTarget(bug); if (targetH) { UI.showAttackVisual(bug.id, targetH.id); targetH.isStunned = true; UI.logMessage(bug.id, `${bug.name}は${targetH.name}を落とし穴にハメた！`); } break;
+        case '落とし穴を掘る': const targetH = getRandomTarget(bug); if (targetH) { UI.showAttackVisual(bug.id, targetH.id, '#8D6E63'); targetH.isStunned = true; UI.logMessage(bug.id, `${bug.name}は${targetH.name}を落とし穴にハメた！`); } break;
         case '小便をかける': attackTarget(bug, 2, '小便'); break;
         case '超音波':
             const targetsC = getOtherAliveBugs(bug);
-            if (targetsC.length > 0) { const dmgC = Math.floor(6 / targetsC.length) || 1; targetsC.forEach(t => { UI.showAttackVisual(bug.id, t.id); damageBug(t, dmgC); }); UI.logMessage(bug.id, `${bug.name}の超音波！(全体に約${dmgC}ダメ)`); } break;
+            if (targetsC.length > 0) {
+                const dmgC = Math.floor(6 / targetsC.length) || 1;
+                // ↓ 第3引数に色コードを追加しました
+                targetsC.forEach(t => { UI.showAttackVisual(bug.id, t.id, '#4FC3F7'); damageBug(t, dmgC); });
+                UI.logMessage(bug.id, `${bug.name}の超音波！(全体に約${dmgC}ダメ)`);
+            }
+            break;
         case '死んだフリ': bug.isInvincible = true; UI.logMessage(bug.id, `${bug.name}は死んだフリをした！(無敵)`); break;
         case '面打ち': attackTarget(bug, 4, '面打ち'); break;
         case '胴打ち': const targetD = getRandomTarget(bug); if (targetD) { UI.showAttackVisual(bug.id, targetD.id); damageBug(targetD, 2); targetD.isStunned = true; UI.logMessage(bug.id, `${bug.name}の胴打ち！${targetD.name}は動けない！`); } break;
@@ -227,12 +247,29 @@ function executeBugAction(bug) {
         case '噛み付く': const targetC2 = getRandomTarget(bug); if (targetC2) { UI.showAttackVisual(bug.id, targetC2.id, '#9c27b0'); targetC2.isPoisoned = true; UI.logMessage(bug.id, `${bug.name}は${targetC2.name}に噛み付いて毒を与えた！`); } break;
         case '天井に張り付く': bug.isFlying = true; UI.logMessage(bug.id, `${bug.name}は天井に張り付いた！(攻撃無効)`); break;
         case 'ロケットダイブ': if (bug.isFlying) { attackTarget(bug, 5, 'ロケットダイブ'); damageBug(bug, 1); UI.logMessage(bug.id, `${bug.name}は反動を受けた(1ダメ)`); bug.isFlying = false; } else UI.logMessage(bug.id, `${bug.name}はロケットダイブしようとしたが天井にいなかった...`); break;
-        case '脱皮する': bug.counters.form = 'pupa'; bug.speed = 0; bug.attack = 0; UI.logMessage(bug.id, `${bug.name}はサナギになった！`); break;
+        case '脱皮する':
+            bug.counters.form = 'pupa';
+            bug.speed = 0;
+            bug.attack = 0;
+
+            // ★追加: サナギ画像に変更
+            bug.icon = '<img src="butterfly_pupa.png" class="bug-img" alt="オオムラサキ(蛹)">';
+            bug.name = 'オオムラサキ(蛹)';
+
+            UI.logMessage(bug.id, `${bug.name}はサナギになった！`);
+            break;
         case '葉っぱを食べる': healBug(bug, 2); UI.logMessage(bug.id, `${bug.name}は葉っぱを食べて回復した`); break;
         case 'かたくなる': bug.currentHp += 5; UI.logMessage(bug.id, `${bug.name}はかたくなった(一時的HP増加)`); break;
         case 'もぞもぞしている':
             if (Math.random() < 0.5) {
-                bug.counters.form = 'adult'; bug.speed = 10; bug.attack = 4; bug.name = 'アゲハチョウ(成虫)'; bug.icon = '<img src="butterfly_adult.png" class="bug-img" alt="アゲハチョウ">';
+                bug.counters.form = 'adult';
+                bug.speed = 10;
+                bug.attack = 4;
+
+                // ★追加: 成虫画像に変更
+                bug.icon = '<img src="butterfly_adult.png" class="bug-img" alt="オオムラサキ">';
+                bug.name = 'オオムラサキ(成虫)';
+
                 UI.logMessage(bug.id, `${bug.name}は羽化した！`);
             } else {
                 UI.logMessage(bug.id, `${bug.name}は羽化の準備中...`);
@@ -240,12 +277,21 @@ function executeBugAction(bug) {
             break;
         case '蜜を吸う': healBug(bug, 5); UI.logMessage(bug.id, `${bug.name}は蜜を吸って回復した(+5)`); break;
         case '鱗粉を撒き散らす':
-            const targetR = getRandomTarget(bug);
-            if (targetR) {
-                UI.showAttackVisual(bug.id, targetR.id);
-                damageBug(targetR, 3);
-                UI.logMessage(bug.id, `${bug.name}は鱗粉を撒き散らした！${targetR.name}に3ダメージ`);
-            } else UI.logMessage(bug.id, `${bug.name}は鱗粉を撒こうとしたが相手がいない...`);
+            const allTargetsR = getOtherAliveBugs(bug);
+            if (allTargetsR.length > 0) {
+                const targetsR = [...allTargetsR].sort(() => 0.5 - Math.random()).slice(0, 3);
+
+                targetsR.forEach(t => {
+                    // ↓ 第3引数に色コードを追加しました
+                    UI.showAttackVisual(bug.id, t.id, '#4FC3F7');
+                    damageBug(t, 3);
+                });
+
+                const names = targetsR.map(t => t.name).join('と');
+                UI.logMessage(bug.id, `${bug.name}は鱗粉を撒き散らした！${names}に3ダメージ`);
+            } else {
+                UI.logMessage(bug.id, `${bug.name}は鱗粉を撒こうとしたが相手がいない...`);
+            }
             break;
         case 'バタフライナイフ': attackTarget(bug, 5, 'バタフライナイフ'); break;
         case '糞直球':
@@ -294,7 +340,7 @@ function executeBugAction(bug) {
                 const temp = bug.currentHp;
                 bug.currentHp = bug.counters.poopSize;
                 bug.counters.poopSize = temp;
-                UI.logMessage(bug.id, `${bug.name}は命と糞を入れ替えた！(HP${bug.currentHp}, フン${bug.counters.poopSize}cm)`);
+                UI.logMessage(bug.id, `糞命の選択！${bug.name}は命と糞を入れ替えた！(HP${bug.currentHp}, フン${bug.counters.poopSize}cm)`);
             } else UI.logMessage(bug.id, `${bug.name}は選択しようとしたがフンが足りない...`);
             break;
     }
