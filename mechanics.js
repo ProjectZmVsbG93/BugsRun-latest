@@ -209,7 +209,7 @@ function executeBugAction(bug) {
         case '残悔積歩拳': const targetZ = getRandomTarget(bug); if (targetZ) { UI.showAttackVisual(bug.id, targetZ.id, '#8D6E63'); targetZ.currentPos = Math.max(0, targetZ.currentPos - 15); UI.logMessage(bug.id, `${bug.name}の残悔積歩拳！${targetZ.name}を15cm後退させた！`); } break;
         case '突進': attackTarget(bug, 1, '突進'); break;
         case '翅の手入れ': bug.counters.doubleMove = true; UI.logMessage(bug.id, `${bug.name}は翅の手入れをしている(次ターン移動2倍)`); break;
-        case '仲間を呼ぶ': bug.counters.minions += Math.floor(Math.random() * 3) + 1; UI.logMessage(bug.id, `${bug.name}は仲間を呼んだ！(現在${bug.counters.minions}匹)`); break;
+        case '仲間を呼ぶ': bug.counters.minions += Math.floor(Math.random() * 2) + 1; UI.logMessage(bug.id, `${bug.name}は仲間を呼んだ！(現在${bug.counters.minions}匹)`); break;
         case '仲間と一緒に前進する': applyWeatherMoveMod(bug, 5 * bug.counters.minions); UI.logMessage(bug.id, `${bug.name}は仲間と進んだ！`); break;
         case '仲間と一緒に攻撃する': attackTarget(bug, bug.counters.minions, '集団攻撃'); break;
         case '突き刺す': attackTarget(bug, 4, '突き刺し'); break;
@@ -605,4 +605,5 @@ function processResult(winner) {
     UI.updateWalletDisplay();
     localStorage.setItem('bugsRaceStats', JSON.stringify(gameState.stats));
     UI.updateHomeStats();
+
 }
