@@ -605,5 +605,4 @@ function processResult(winner) {
     UI.updateWalletDisplay();
     localStorage.setItem('bugsRaceStats', JSON.stringify(gameState.stats));
     UI.updateHomeStats();
-
 }

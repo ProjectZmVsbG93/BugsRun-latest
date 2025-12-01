@@ -22,10 +22,15 @@ function init() {
     if (El.gameStartBtn) {
         El.gameStartBtn.addEventListener('click', startGameFlow);
     }
+    if (El.shopBtn) {
+        El.shopBtn.addEventListener('click', () => {
+            window.location.href = 'shop.html';
+        });
+    }
     if (El.toBettingBtn) El.toBettingBtn.addEventListener('click', () => UI.switchScreen('betting'));
     if (El.nextTurnBtn) El.nextTurnBtn.addEventListener('click', processTurn);
     if (El.nextRaceBtn) El.nextRaceBtn.addEventListener('click', startGameFlow);
-    
+
     // Statistics Modal
     if (El.statsToggleBtn) El.statsToggleBtn.addEventListener('click', () => {
         El.statsModal.classList.remove('hidden');
@@ -37,7 +42,88 @@ function init() {
     if (El.statsModal) El.statsModal.addEventListener('click', (e) => {
         if (e.target === El.statsModal) El.statsModal.classList.add('hidden');
     });
-    
+
+    // --- データ管理モーダルのロジック ---
+    const dataModal = document.getElementById('data-modal');
+    const dataManageBtn = document.getElementById('data-manage-btn');
+    const dataCloseBtn = document.getElementById('data-close-btn');
+    const exportArea = document.getElementById('export-area');
+    const btnCopy = document.getElementById('btn-copy-data');
+    const importArea = document.getElementById('import-area');
+    const btnImport = document.getElementById('btn-import-data');
+
+    // 開く
+    if (dataManageBtn) {
+        dataManageBtn.addEventListener('click', () => {
+            dataModal.classList.remove('hidden');
+            // 現在のデータをJSON化して表示
+            const allData = {
+                wallet: localStorage.getItem('bugsRaceWallet'),
+                stats: localStorage.getItem('bugsRaceStats'),
+                // ショップ関連のデータも一緒に
+                inventory: localStorage.getItem('bugsRaceInventory'),
+                stocks: localStorage.getItem('bugsRaceStocks'),
+                portfolio: localStorage.getItem('bugsRacePortfolio'),
+                fx: localStorage.getItem('bugsRaceFxPositions') // 旧FXデータも念のため
+            };
+            // null除外
+            Object.keys(allData).forEach(key => {
+                if (allData[key] === null) delete allData[key];
+            });
+
+            exportArea.value = JSON.stringify(allData);
+        });
+    }
+
+    // 閉じる
+    if (dataCloseBtn) {
+        dataCloseBtn.addEventListener('click', () => dataModal.classList.add('hidden'));
+    }
+    if (dataModal) {
+        dataModal.addEventListener('click', (e) => {
+            if (e.target === dataModal) dataModal.classList.add('hidden');
+        });
+    }
+
+    // コピー
+    if (btnCopy) {
+        btnCopy.addEventListener('click', () => {
+            exportArea.select();
+            document.execCommand('copy');
+            alert('データをクリップボードにコピーしました！');
+        });
+    }
+
+    // インポート
+    if (btnImport) {
+        btnImport.addEventListener('click', () => {
+            const jsonStr = importArea.value.trim();
+            if (!jsonStr) {
+                alert('データが空です');
+                return;
+            }
+
+            try {
+                const data = JSON.parse(jsonStr);
+
+                if (!confirm('現在のデータを上書きして読み込みますか？\n(この操作は取り消せません)')) return;
+
+                // データをローカルストレージに保存
+                if (data.wallet) localStorage.setItem('bugsRaceWallet', data.wallet);
+                if (data.stats) localStorage.setItem('bugsRaceStats', data.stats);
+                if (data.inventory) localStorage.setItem('bugsRaceInventory', data.inventory);
+                if (data.stocks) localStorage.setItem('bugsRaceStocks', data.stocks);
+                if (data.portfolio) localStorage.setItem('bugsRacePortfolio', data.portfolio);
+                if (data.fx) localStorage.setItem('bugsRaceFxPositions', data.fx);
+
+                alert('データの読み込みに成功しました！\nページをリロードします。');
+                location.reload();
+
+            } catch (e) {
+                alert('データの形式が正しくありません。\n' + e);
+            }
+        });
+    }
     // Quick bet buttons
     document.querySelectorAll('.btn-quick-bet').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -52,7 +138,7 @@ function init() {
             });
         });
     });
-    
+
     // Clear log button
     if (El.clearLogBtn) {
         El.clearLogBtn.addEventListener('click', () => {

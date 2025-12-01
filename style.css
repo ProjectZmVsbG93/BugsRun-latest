@@ -1532,3 +1532,79 @@ main {
         max-height: 95vh;
     }
 }
+
+/* Link Button (Header) */
+.btn-icon-link {
+    text-decoration: none;
+    font-size: 1.5rem;
+    margin-right: 5px;
+    transition: transform 0.2s;
+}
+
+.btn-icon-link:hover {
+    transform: scale(1.2);
+}
+
+/* Data Modal Styles */
+.data-section {
+    margin-bottom: 15px;
+}
+
+.data-section h3 {
+    font-size: 1.1rem;
+    color: var(--text-color);
+    margin-bottom: 10px;
+    border-left: 4px solid var(--primary-color);
+    padding-left: 10px;
+}
+
+.data-section p {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.data-control-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.data-control-row textarea {
+    flex: 1;
+    height: 80px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    resize: none;
+    font-family: monospace;
+}
+
+.data-control-row button {
+    flex: 0 0 100px;
+    padding: 10px;
+    border: none;
+    /* 枠線を消す */
+    border-radius: 8px;
+    /* 丸くする */
+    color: white;
+    /* 文字を白く */
+    font-weight: bold;
+    /* 太字 */
+    cursor: pointer;
+    /* カーソルを指に */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    /* 影 */
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.data-control-row button:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+.data-control-row button:active {
+    transform: translateY(0);
+    box-shadow: none;
+}

@@ -34,3 +34,4 @@ export const statsCloseBtn = document.getElementById('stats-close-btn');
 
 export const raceActionLog = document.getElementById('race-action-log');
 export const clearLogBtn = document.getElementById('clear-log-btn');
+export const shopBtn = document.getElementById('shop-btn');

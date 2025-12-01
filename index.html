@@ -14,13 +14,13 @@
         <header>
             <h1>🐛 虫さんトコトコレース 🏁</h1>
             <div class="header-right">
-                <a href="shop.html" style="text-decoration: none; font-size: 1.5rem; margin-right: 10px;"
-                    title="買い物へ">🛍️</a>
                 <div class="wallet-display">
                     💰 所持金: <span id="wallet-amount">10000</span>円
                     <span id="loan-display" class="loan-display hidden"> (借金: <span id="loan-amount">0</span>円)</span>
                 </div>
+                <button id="shop-btn" class="btn-stats" title="買い物へ">🛍️</button>
                 <button id="stats-toggle-btn" class="btn-stats" title="統計を見る">📊</button>
+                <button id="data-manage-btn" class="btn-stats" title="データ管理">💾</button>
             </div>
         </header>
 
@@ -97,7 +97,36 @@
                     </div>
                 </div>
             </div>
-
+            <!-- ★追加: データ管理モーダル -->
+            <div id="data-modal" class="modal hidden">
+                <div class="modal-content" style="max-width: 600px;">
+                    <div class="modal-header">
+                        <h2>💾 データ管理</h2>
+                        <button id="data-close-btn" class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="data-section">
+                            <h3>📤 データのエクスポート</h3>
+                            <p>現在のデータをテキストとして保存します。これをコピーして別のブラウザに貼り付けるとデータを移行できます。</p>
+                            <div class="data-control-row">
+                                <textarea id="export-area" readonly placeholder="ここにデータが表示されます"></textarea>
+                                <button id="btn-copy-data" class="btn-primary">コピー</button>
+                            </div>
+                        </div>
+                        <div class="data-section"
+                            style="border-top: 2px dashed #eee; margin-top: 20px; padding-top: 20px;">
+                            <h3>📥 データのインポート</h3>
+                            <p>コピーしたデータをここに貼り付けて「読み込む」を押すと、データが上書きされます。</p>
+                            <p style="color: red; font-size: 0.9rem;">※現在のデータは消えます！注意してください。</p>
+                            <div class="data-control-row">
+                                <textarea id="import-area" placeholder="ここにデータを貼り付け"></textarea>
+                                <button id="btn-import-data" class="btn-sell-stock"
+                                    style="background: #e91e63;">読み込む</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- Course Screen -->
             <section id="course-screen" class="screen hidden">
                 <h2>📍 本日のレース会場</h2>
