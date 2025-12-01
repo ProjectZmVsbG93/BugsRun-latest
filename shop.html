@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ショッピングモール</title>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="shop.css">
+</head>
+
+<body>
+    <div id="app">
+        <header>
+            <h1>🛍️ ショッピングモール</h1>
+            <div class="header-right">
+                <div class="wallet-display">
+                    💰 所持金: <span id="wallet-amount">---</span>円
+                </div>
+                <a href="index.html" class="btn-back">🏁 レースに戻る</a>
+            </div>
+        </header>
+
+        <main>
+            <!-- 株式市場セクション -->
+            <section class="stock-section">
+                <h2>📈 虫さん株式市場</h2>
+                <p class="stock-desc">レースの結果で株価が変動！推しの虫を応援して資産を増やそう。<br>
+                    ※レバレッジ取引は借金のリスクがあります。</p>
+
+                <div class="stock-container">
+                    <!-- 株価ボード -->
+                    <div class="stock-board" id="stock-board">
+                        <!-- JSで生成 -->
+                        <div class="loading">市場データを読み込み中...</div>
+                    </div>
+
+                    <!-- 注文パネル -->
+                    <div class="stock-order-panel">
+                        <h3 id="order-target-name">銘柄を選択してください</h3>
+                        <div class="order-inputs">
+                            <div class="input-group">
+                                <label>株数</label>
+                                <input type="number" id="stock-amount" placeholder="株数" min="1" value="10">
+                            </div>
+                            <div class="input-group">
+                                <label>レバレッジ</label>
+                                <select id="stock-leverage">
+                                    <option value="1">現物 (1倍)</option>
+                                    <option value="2">信用 (2倍)</option>
+                                    <option value="3.5">全力 (3.5倍)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="order-summary" id="order-summary">
+                            必要証拠金: --- 円
+                        </div>
+                        <button id="btn-buy-stock" class="btn-buy-stock" disabled>購入する</button>
+                    </div>
+                </div>
+
+                <!-- 保有株リスト -->
+                <div class="stock-portfolio hidden" id="stock-portfolio">
+                    <h3>📂 保有株式ポートフォリオ</h3>
+                    <div id="portfolio-list" class="portfolio-list">
+                        <!-- JSで生成 -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ガチャ & 商品一覧セクション -->
+            <section class="shop-section">
+                <h2>🛒 商品一覧 & ガチャ</h2>
+                <div class="items-grid">
+                    <div class="item-card gacha-card-special">
+                        <div class="item-image" style="font-size: 4rem; background: #FFF9C4;">🍲</div>
+                        <div class="item-details">
+                            <div class="item-name">闇鍋ガチャ</div>
+                            <div class="item-price">¥500</div>
+                            <div class="item-desc">何が出るかは運次第。<br>ゴミか、億万長者か...。</div>
+                            <button id="btn-open-gacha-modal" class="btn-buy"
+                                style="background: linear-gradient(45deg, #7E57C2, #5E35B1);">ガチャ画面へ</button>
+                        </div>
+                    </div>
+                    <div id="items-grid" style="display: contents;"></div>
+                </div>
+            </section>
+
+            <!-- 持ち物セクション -->
+            <section class="inventory-section">
+                <h2>🎒 持ち物 (売却可能)</h2>
+                <p class="note">※売却価格は購入価格の50%です</p>
+                <div class="inventory-grid" id="inventory-grid">
+                    <p class="empty-msg">持ち物はまだありません</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- ガチャ用モーダル -->
+        <div id="gacha-modal" class="modal hidden">
+            <div class="modal-content gacha-modal-content">
+                <div class="modal-header">
+                    <h2>🔮 闇鍋ガチャ</h2>
+                    <button id="btn-close-gacha" class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body gacha-body">
+                    <div class="gacha-display-area">
+                        <div class="gacha-main-icon">❓</div>
+                        <div class="gacha-result-text">500円で回せます</div>
+                    </div>
+                    <div class="gacha-controls">
+                        <button id="btn-play-gacha" class="btn-gacha-action">ガチャを回す (¥500)</button>
+                    </div>
+                    <div class="gacha-history-area">
+                        <h3>🎁 今回の結果履歴</h3>
+                        <div id="gacha-history" class="gacha-history-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- mechanics.js からデータを参照するために type="module" に変更 -->
+    <!-- ただし、shop.js自体はモジュールではないので、bug_data.jsとしてデータを分離するか、 -->
+    <!-- shop.js内にハードコードするか。今回はshop.js内にデータをコピーして独立させる形にします -->
+    <script src="shop.js"></script>
+</body>
+
+</html>

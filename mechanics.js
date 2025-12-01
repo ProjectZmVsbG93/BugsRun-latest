@@ -1,15 +1,16 @@
-// mechanics.js
 import { gameState } from './state.js';
 import * as El from './elements.js';
 import { COURSES, BUG_TEMPLATES, CONDITIONS, RACE_DISTANCE } from './data.js';
 import * as UI from './ui.js';
 import { renderBettingScreen } from './betting.js';
 
-// ★追加: レース終了時の勝者を一時保存する変数
+// レース終了時の勝者を一時保存する変数
 let finishedWinner = null;
 
+// 株価データのキー
+const STOCK_KEY = 'bugsRaceStocks';
+
 export function setupNewRace() {
-    // ★追加: 新しいレースのたびにリセット
     finishedWinner = null;
 
     gameState.currentCourse = COURSES[Math.floor(Math.random() * COURSES.length)];
@@ -37,7 +38,7 @@ export function setupNewRace() {
             isPoisoned: false,
             isInvincible: false,
             isFlying: false,
-            isUnhealable: false, // 念のため追加
+            isUnhealable: false,
             counters: { northStar: 0, minions: 0, poopSize: 0, form: 'larva', skipTurn: false },
             odds: calculateOdds(template, condition)
         };
@@ -79,7 +80,6 @@ export function startRace() {
         El.raceActionLog.innerHTML = '';
     }
 
-    // 各虫のログボックスもクリア
     document.querySelectorAll('.status-log').forEach(el => el.innerHTML = '');
 
     UI.logMessage(null, `レース開始！ コース: ${gameState.currentCourse.name}`);
@@ -89,7 +89,6 @@ export function startRace() {
 }
 
 export function processTurn() {
-    // ★追加: レース終了状態なら、リザルト画面へ遷移させる
     if (finishedWinner !== null) {
         UI.switchScreen('result');
         processResult(finishedWinner);
@@ -99,7 +98,6 @@ export function processTurn() {
     UI.clearAttackVisuals();
     El.nextTurnBtn.disabled = true;
 
-    // 各虫のログボックスをクリア
     document.querySelectorAll('.status-log').forEach(el => el.innerHTML = '');
 
     if (Math.random() < gameState.currentCourse.weatherChangeRate) {
@@ -183,7 +181,6 @@ function executeBugAction(bug) {
             if (Math.random() < 0.05 * condMult) {
                 const prey = getRandomTarget(bug);
                 if (prey) {
-                    // ★追加: 捕食成功時の黄色い矢印
                     UI.showAttackVisual(bug.id, prey.id, '#ffeb3b');
                     killBug(prey, 'オオカマキリに捕食された');
                     UI.logMessage(bug.id, `${bug.name}の捕食成功！`);
@@ -191,18 +188,12 @@ function executeBugAction(bug) {
             }
             else UI.logMessage(bug.id, `${bug.name}は捕食を試みたが失敗...`); break;
         case 'オトモを呼ぶ': bug.counters.minions++; UI.logMessage(bug.id, `${bug.name}はオトモを呼んだ！(現在${bug.counters.minions}匹)`);
-            if (Math.random() < 0.5) attackTarget(bug, 2, 'オトモの攻撃'); else { bug.currentPos += 10; UI.logMessage(bug.id, `オトモが${bug.name}を運んだ！(+10cm)`); } break;
-        case 'ワイはグソクムシ界の大王やぞ！！！': healBug(bug, 2); UI.logMessage(bug.id, `${bug.name}「ワイはグソクムシ界の大王やぞ！！！」(${bug.name}は回復した(+2))`); break;
+            if (Math.random() < 0.5) attackTarget(bug, 2, 'オトモの攻撃'); else { bug.currentPos += 5; UI.logMessage(bug.id, `オトモが${bug.name}を運んだ！(+5cm)`); } break;
+        case 'ワイはグソクムシ界の大王やぞ！！！': healBug(bug, 2); UI.logMessage(bug.id, `${bug.name}「ワイはグソクムシ界の大王やぞ！！！」(気持ちよくなってHP+2)`); break;
         case 'ハイパーシャコパンチ': attackTarget(bug, 5, 'ハイパーシャコパンチ'); break;
         case '衝撃波':
             const targetsW = getOtherAliveBugs(bug);
-            if (targetsW.length > 0) {
-                const dmgPer = Math.floor(9 / targetsW.length) || 1;
-                // ↓ 第3引数に色コードを追加しました
-                targetsW.forEach(t => { UI.showAttackVisual(bug.id, t.id, '#4FC3F7'); damageBug(t, dmgPer); });
-                UI.logMessage(bug.id, `${bug.name}の衝撃波！(全体に約${dmgPer}ダメ)`);
-            }
-            break;
+            if (targetsW.length > 0) { const dmgPer = Math.floor(9 / targetsW.length) || 1; targetsW.forEach(t => { UI.showAttackVisual(bug.id, t.id, '#4FC3F7'); damageBug(t, dmgPer); }); UI.logMessage(bug.id, `${bug.name}の衝撃波！(全体に約${dmgPer}ダメ)`); } break;
         case '閃光弾': bug.isInvincible = true; bug.currentPos += 10; UI.logMessage(bug.id, `${bug.name}の閃光弾！(無敵＆+10cm)`); break;
         case '回復': healBug(bug, 1); UI.logMessage(bug.id, `${bug.name}は回復した(+1)`); break;
         case '北斗七星ゲージを貯める':
@@ -231,13 +222,7 @@ function executeBugAction(bug) {
         case '小便をかける': attackTarget(bug, 2, '小便'); break;
         case '超音波':
             const targetsC = getOtherAliveBugs(bug);
-            if (targetsC.length > 0) {
-                const dmgC = Math.floor(6 / targetsC.length) || 1;
-                // ↓ 第3引数に色コードを追加しました
-                targetsC.forEach(t => { UI.showAttackVisual(bug.id, t.id, '#4FC3F7'); damageBug(t, dmgC); });
-                UI.logMessage(bug.id, `${bug.name}の超音波！(全体に約${dmgC}ダメ)`);
-            }
-            break;
+            if (targetsC.length > 0) { const dmgC = Math.floor(6 / targetsC.length) || 1; targetsC.forEach(t => { UI.showAttackVisual(bug.id, t.id, '#4FC3F7'); damageBug(t, dmgC); }); UI.logMessage(bug.id, `${bug.name}の超音波！(全体に約${dmgC}ダメ)`); } break;
         case '死んだフリ': bug.isInvincible = true; UI.logMessage(bug.id, `${bug.name}は死んだフリをした！(無敵)`); break;
         case '面打ち': attackTarget(bug, 4, '面打ち'); break;
         case '胴打ち': const targetD = getRandomTarget(bug); if (targetD) { UI.showAttackVisual(bug.id, targetD.id); damageBug(targetD, 2); targetD.isStunned = true; UI.logMessage(bug.id, `${bug.name}の胴打ち！${targetD.name}は動けない！`); } break;
@@ -251,25 +236,15 @@ function executeBugAction(bug) {
             bug.counters.form = 'pupa';
             bug.speed = 0;
             bug.attack = 0;
-
-            // ★追加: サナギ画像に変更
             bug.icon = '<img src="butterfly_pupa.png" class="bug-img" alt="オオムラサキ(蛹)">';
             bug.name = 'オオムラサキ(蛹)';
-
             UI.logMessage(bug.id, `${bug.name}はサナギになった！`);
             break;
         case '葉っぱを食べる': healBug(bug, 2); UI.logMessage(bug.id, `${bug.name}は葉っぱを食べて回復した`); break;
         case 'かたくなる': bug.currentHp += 5; UI.logMessage(bug.id, `${bug.name}はかたくなった(一時的HP増加)`); break;
         case 'もぞもぞしている':
             if (Math.random() < 0.5) {
-                bug.counters.form = 'adult';
-                bug.speed = 10;
-                bug.attack = 4;
-
-                // ★追加: 成虫画像に変更
-                bug.icon = '<img src="butterfly_adult.png" class="bug-img" alt="オオムラサキ">';
-                bug.name = 'オオムラサキ(成虫)';
-
+                bug.counters.form = 'adult'; bug.speed = 10; bug.attack = 4; bug.name = 'オオムラサキ(成虫)'; bug.icon = '<img src="butterfly_adult.png" class="bug-img" alt="オオムラサキ">';
                 UI.logMessage(bug.id, `${bug.name}は羽化した！`);
             } else {
                 UI.logMessage(bug.id, `${bug.name}は羽化の準備中...`);
@@ -280,13 +255,10 @@ function executeBugAction(bug) {
             const allTargetsR = getOtherAliveBugs(bug);
             if (allTargetsR.length > 0) {
                 const targetsR = [...allTargetsR].sort(() => 0.5 - Math.random()).slice(0, 3);
-
                 targetsR.forEach(t => {
-                    // ↓ 第3引数に色コードを追加しました
                     UI.showAttackVisual(bug.id, t.id, '#4FC3F7');
                     damageBug(t, 3);
                 });
-
                 const names = targetsR.map(t => t.name).join('と');
                 UI.logMessage(bug.id, `${bug.name}は鱗粉を撒き散らした！${names}に3ダメージ`);
             } else {
@@ -382,6 +354,8 @@ function attackTarget(attacker, dmg, moveName) {
 }
 
 function damageBug(bug, amount) {
+    if (bug.isDead) return;
+
     if (bug.isInvincible) { UI.logMessage(bug.id, `${bug.name}は攻撃を無効化した！`); return; }
     bug.currentHp -= amount;
     // UI.logMessage(bug.id, `${bug.name}に${amount}ダメージ`);
@@ -447,16 +421,83 @@ function checkRaceStatus() {
     if (raceFinished) endRace(winner); else setTimeout(() => { El.nextTurnBtn.disabled = false; }, 600);
 }
 
-// ★変更: 自動遷移をやめて、ボタン入力を待つように変更
 function endRace(winner) {
     El.nextTurnBtn.textContent = "結果を見る！";
     El.nextTurnBtn.disabled = false;
-    finishedWinner = winner; // 勝者を保存して次のクリックを待つ
+    finishedWinner = winner;
 }
 
 function processResult(winner) {
     gameState.stats.totalRaces++;
     gameState.stats.totalBet += gameState.bet.amount;
+
+    // --- ここから株価変動処理 ---
+    const storedData = localStorage.getItem(STOCK_KEY);
+    let stockData = storedData ? JSON.parse(storedData) : { prices: {}, streaks: {}, history: {} };
+
+    // データ初期化（初めての虫がいる場合など）
+    BUG_TEMPLATES.forEach(t => {
+        if (!stockData.prices[t.id]) {
+            // 初期株価計算: (speed*2 + hp*2 + attack*5) * 2 程度
+            // ランダム要素で多少バラつかせる
+            const basePrice = Math.floor((t.speed * 2 + t.hp * 2 + t.attack * 5) * (1.8 + Math.random() * 0.4));
+            stockData.prices[t.id] = basePrice;
+            stockData.streaks[t.id] = 0;
+            stockData.history[t.id] = [basePrice];
+        }
+    });
+
+    // 順位リスト作成 (ゴール順 > 生存距離順 > 死亡距離順)
+    const ranking = [...gameState.bugs].sort((a, b) => {
+        if (a.isDead && !b.isDead) return 1;
+        if (!a.isDead && b.isDead) return -1;
+        return b.currentPos - a.currentPos;
+    });
+
+    // 順位ごとの変動率定義
+    const rankMultipliers = [1.15, 1.05, 1.0, 0.95, 0.85]; // 1位～5位
+
+    ranking.forEach((bug, index) => {
+        const currentPrice = stockData.prices[bug.id];
+        let multiplier = rankMultipliers[index] || 1.0;
+
+        // 連勝・連敗ボーナス
+        let streak = stockData.streaks[bug.id];
+
+        // 1位なら連勝カウント、4位以下なら連敗カウント、それ以外リセット
+        if (index === 0) {
+            streak = streak > 0 ? streak + 1 : 1;
+        } else if (index >= 3) {
+            streak = streak < 0 ? streak - 1 : -1;
+        } else {
+            streak = 0; // 2位・3位はストリークリセット
+        }
+        stockData.streaks[bug.id] = streak;
+
+        // 連勝数に応じて変動幅を増やす (1連勝につき +2%, 連敗につき -2%)
+        // 最大でも ±20% 程度の補正に抑える
+        const streakBonus = Math.min(Math.max(streak * 0.02, -0.2), 0.2);
+        multiplier += streakBonus;
+
+        // 乱数要素 (±2%)
+        const randomFluctuation = 0.98 + Math.random() * 0.04;
+
+        // 新価格計算 (最低価格10円)
+        let newPrice = Math.floor(currentPrice * multiplier * randomFluctuation);
+        if (newPrice < 10) newPrice = 10;
+
+        // データ更新
+        stockData.prices[bug.id] = newPrice;
+
+        // 履歴更新 (最新10件)
+        if (!stockData.history[bug.id]) stockData.history[bug.id] = [];
+        stockData.history[bug.id].push(newPrice);
+        if (stockData.history[bug.id].length > 10) stockData.history[bug.id].shift();
+    });
+
+    // 保存
+    localStorage.setItem(STOCK_KEY, JSON.stringify(stockData));
+    // --- 株価変動処理ここまで ---
 
     let won = false; let payout = 0;
     const finalRanking = [...gameState.bugs]
