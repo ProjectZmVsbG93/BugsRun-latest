@@ -77,6 +77,104 @@ const SHOP_ITEMS = [
     // --- 超高額 (SSR枠) ---
     { id: 'honda_jet', name: 'プライベートジェット (HondaJet)', price: 750000000, icon: '🛩️', desc: '渋滞知らずの空の旅。維持費もヤバい。' },
     { id: 'baseball_team', name: '球団買収 (プロ野球)', price: 30000000000, icon: '⚾', desc: 'オーナー気分を味わえる。赤字覚悟。' },
+
+    // --- 伝説・装備 ---
+    { id: 'master_sword', name: '退魔の剣', price: 55000, icon: '🗡️', desc: '森の奥深くで眠っていた伝説の剣。抜くにはハートが必要。' },
+    { id: 'dragon_ball', name: '四星球', price: 77777, icon: '🟠', desc: 'あと6つ集めると願いが叶うらしい。' },
+    { id: 'infinity_gauntlet', name: '無限のガントレット', price: 500000000, icon: '🧤', desc: '指パッチン厳禁。' },
+
+    // --- 宝石・鉱物 ---
+    { id: 'amethyst', name: 'アメジストの原石', price: 15000, icon: '🟣', desc: '魔除けの効果があるとかないとか。玄関に置きたい。' },
+    { id: 'diamond_ring', name: '婚約指輪 (給料3ヶ月分)', price: 900000, icon: '💍', desc: '箱パカ用。覚悟の証。' },
+    { id: 'pink_diamond', name: 'ピンクダイヤモンド', price: 50000000, icon: '💎', desc: '奇跡の宝石。オークション級の輝き。' },
+    { id: 'meteorite', name: 'ギベオン隕石', price: 850000, icon: '☄️', desc: '宇宙から飛来した鉄の塊。パワーを感じる。' },
+    { id: 'kryptonite', name: '緑色の鉱石', price: 2000000, icon: '🟢', desc: '特定のスーパーヒーローが弱る石。' },
+
+    // --- 過去・遺物 ---
+    { id: 'haniwa', name: '踊る埴輪', price: 8000, icon: '🗿', desc: '古墳時代のアイドル。とぼけた顔が可愛い。' },
+    { id: 'jomon_pottery', name: '火焔型土器', price: 120000, icon: '🏺', desc: '縄文人のパッションが爆発している。' },
+    { id: 'ammonite', name: 'アンモナイトの化石', price: 4500, icon: '🐚', desc: '太古の海を支配した生物。' },
+    { id: 'trex_skull', name: 'T-REXの頭骨', price: 15000000, icon: '🦖', desc: '博物館クラスの展示物。迫力がすごい。' },
+    { id: 'ninja_scroll', name: '忍術の巻物', price: 55000, icon: '📜', desc: '秘伝の術が記されているが読めない。' },
+    { id: 'katana_masamune', name: '名刀 正宗', price: 80000000, icon: '⚔️', desc: '国宝級の日本刀。切れ味抜群。' },
+
+    // --- 未来・SF ---
+    { id: 'hoverboard', name: 'ホバーボード', price: 8500000, icon: '🛹', desc: '宙に浮くスケボー。水の上では動かないので注意。' },
+    { id: 'time_machine', name: 'タイムマシン (デロリアン)', price: 120000000, icon: '🏎️', desc: '過去や未来へ行ける車。燃料はゴミ。' },
+    { id: 'cryo_pod', name: '冷凍睡眠カプセル', price: 30000000, icon: '⚰️', desc: '300年後の未来で目覚めたいあなたへ。' },
+    { id: 'ai_robot', name: '猫型ロボット', price: 220000000, icon: '🤖', desc: '未来の国からやってきた。ポケットは四次元。' },
+    { id: 'space_suit', name: '船外活動用宇宙服', price: 100000000, icon: '🧑‍🚀', desc: 'NASA仕様。これがあれば宇宙でも安心。' },
+
+    // --- 高級食材 ---
+    { id: 'matsutake', name: '国産マツタケ', price: 30000, icon: '🍄', desc: '秋の味覚の王様。香りが段違い。' },
+    { id: 'caviar', name: 'キャビア (ベルーガ)', price: 50000, icon: '🐟', desc: '世界三大珍味。黒い宝石。' },
+    { id: 'vintage_wine', name: 'ロマネ・コンティ', price: 3000000, icon: '🍷', desc: '飲む不動産。' },
+    { id: 'sushi_set', name: '回らない寿司桶', price: 15000, icon: '🍣', desc: '特上。ウニとイクラも入ってる。' },
+    { id: 'kobe_beef', name: '神戸牛ステーキ', price: 20000, icon: '🥩', desc: 'A5ランク。口の中でとろける。' },
+
+    // --- オカルト・UMA ---
+    { id: 'tsuchinoko', name: 'ツチノコのミイラ', price: 1000000, icon: '🐍', desc: '懸賞金1億円の夢の跡。' },
+    { id: 'moai', name: 'モアイ像 (レプリカ)', price: 300000, icon: '🗿', desc: 'イースター島からのお土産。デカすぎて邪魔。' },
+    { id: 'ufo_fragment', name: 'UFOの破片', price: 5000000, icon: '🛸', desc: '未知の金属でできている。NASAが探している。' },
+    { id: 'cursed_doll', name: '呪いの日本人形', price: 500, icon: '🎎', desc: '捨てても戻ってくる。髪が伸びる。' },
+
+    // --- 超高額・概念 ---
+    { id: 'bitcoin_physical', name: 'ビットコイン (物理)', price: 9000000, icon: '₿', desc: 'なぜか硬貨として存在する謎の物体。' },
+    { id: 'oil_field', name: '石油油田', price: 5000000000, icon: '🛢️', desc: '不労所得の極み。石油王になれる。' },
+    { id: 'mona_lisa', name: 'モナ・リザ (本物)', price: 80000000000, icon: '🖼️', desc: 'ルーブル美術館から「借りて」きた。' },
+    { id: 'statue_of_liberty', name: '自由の女神', price: 40000000000, icon: '🗽', desc: 'ニューヨークから輸送費別でお届け。' },
+    { id: 'rocket', name: 'スペースX ロケット', price: 6000000000, icon: '🚀', desc: '火星移住計画用。' },
+
+    // --- 芸術・インテリア ---
+    { id: 'scream', name: '叫び (ムンク)', price: 12000000, icon: '😱', desc: 'あまりの価格に叫んでいる。' },
+    { id: 'thinker', name: '考える人', price: 5000000, icon: '🤔', desc: '「晩ご飯何にしようかな…」' },
+    { id: 'red_chair', name: '赤いパイプ椅子', price: 2000, icon: '🪑', desc: 'プロレス会場から持ってきた。殴打用。' },
+    { id: 'toilet_gold', name: '純金のトイレ', price: 60000000, icon: '🚽', desc: '落ち着いて用を足せない。' },
+    { id: 'bonsai', name: '樹齢500年の盆栽', price: 8000000, icon: '🪴', desc: 'おじいちゃんの宝物。水をやり忘れると怒られる。' },
+    { id: 'moai_tissue', name: 'モアイのティッシュケース', price: 2500, icon: '🗿', desc: '鼻からティッシュが出る。' },
+
+    // --- 和風・JAPAN ---
+    { id: 'torii', name: '千本鳥居', price: 5000000, icon: '⛩️', desc: '部屋が京都になる。' },
+    { id: 'mount_fuji', name: '富士山 (の書き割)', price: 3776, icon: '🗻', desc: '銭湯にあるアレ。' },
+    { id: 'samurai_armor', name: '赤備えの甲冑', price: 1500000, icon: '👹', desc: '真田幸村モデル。夜中に動き出す。' },
+    { id: 'daruma', name: '必勝ダルマ', price: 3000, icon: '👺', desc: '片目はまだ入れていない。選挙の時に。' },
+    { id: 'onigiri', name: 'コンビニのおにぎり', price: 150, icon: '🍙', desc: 'ツナマヨ。日本が生んだ最高の発明。' },
+    { id: 'mikoshi', name: 'お神輿', price: 4000000, icon: '🏮', desc: 'ワッショイ！部屋の中で担ぐと壁にぶつかる。' },
+
+    // --- ネット・ネタ ---
+    { id: 'potato_server', name: 'ジャガイモサーバー', price: 10, icon: '🥔', desc: '回線が弱い時に使われる比喩。' },
+    { id: 'ie_icon', name: 'IEのアイコン', price: 5, icon: '🇪', desc: '動作が...遅い...です...。' },
+    { id: 'blue_screen', name: 'ブルースクリーン', price: 500, icon: '💻', desc: '見てるだけで胃が痛くなる。' },
+    { id: 'wi_fi', name: '最強のWi-Fiルーター', price: 30000, icon: '📶', desc: 'アンテナが8本くらい立ってる。' },
+
+    // --- ランドマーク ---
+    { id: 'tokyo_tower', name: '東京タワー', price: 1000000000, icon: '🗼', desc: '昭和のシンボル。やっぱり赤が好き。' },
+    { id: 'pyramid', name: 'ギザのピラミッド', price: 5000000000, icon: '🔺', desc: 'パワーを感じる。カミソリの刃が研げるらしい。' },
+    { id: 'sphinx', name: 'スフィンクス', price: 3000000000, icon: '🦁', desc: '鼻が欠けている。なぞなぞを出してくる。' },
+    { id: 'eiffel_tower', name: 'エッフェル塔', price: 8000000000, icon: '🗼', desc: 'パリの象徴。鉄の貴婦人。' },
+    { id: 'stonehenge', name: 'ストーンヘンジ', price: 50000000, icon: '🪨', desc: '誰が何のために作ったのか。ただの石置場かも。' },
+
+    // --- 愛すべきゴミ・ガラクタ (5円〜500円) ---
+    { id: 'bag_closure', name: 'パンの袋を留めるアレ', price: 5, icon: '🪝', desc: '正式名称は「バッグクロージャー」。なぜか捨てられない。' },
+    { id: 'rubber_band', name: 'いつかの輪ゴム', price: 8, icon: '➰', desc: '手首につけておくと血が止まる。劣化してベタベタする。' },
+    { id: 'bell_mark', name: 'ベルマーク (0.5点)', price: 10, icon: '🔔', desc: '集めると学校にピアノが届くらしい。あと100万枚必要。' },
+    { id: 'soy_fish', name: '魚の醤油入れ', price: 15, icon: '🐟', desc: 'お弁当の隅にいるやつ。正式名称は「ランチャーム」。' },
+    { id: 'baran', name: 'バラン', price: 20, icon: '🌿', desc: 'お弁当の仕切り。プラスチック製。食べられません。' },
+    { id: 'mystery_screw', name: '謎のネジ', price: 25, icon: '🔩', desc: '家具を組み立てた後に必ず1本余るやつ。どこの？' },
+    { id: 'ice_pack', name: '保冷剤', price: 30, icon: '🧊', desc: '冷凍庫を占拠する大量の保冷剤。いつか使うと信じている。' },
+    { id: 'pull_tab', name: '空き缶のプルタブ', price: 35, icon: '🥫', desc: '車椅子と交換できるという都市伝説があった。' },
+    { id: 'milk_cap', name: '牛乳瓶のフタ', price: 40, icon: '⚪', desc: 'メンコにして遊んだ歴戦の勇者。' },
+    { id: 'receipt_long', name: '長すぎるレシート', price: 50, icon: '🧾', desc: 'クーポンのせいで本体より長い。財布がパンパンになる原因。' },
+    { id: 'dead_battery', name: '使用済み乾電池', price: 60, icon: '🔋', desc: 'どれが新品でどれが使用済みかもう分からない。' },
+    { id: 'glove_one', name: '片方だけの軍手', price: 80, icon: '🧤', desc: '道端によく落ちている。もう片方は旅に出た。' },
+    { id: 'broken_chalk', name: '折れたチョーク', price: 100, icon: '🖍️', desc: '先生が黒板に強く書きすぎた末路。粉っぽい。' },
+    { id: 'dust_bunny', name: '換気扇のホコリ', price: 120, icon: '☁️', desc: '年末の大掃除で見なかったことにされる存在。' },
+    { id: 'dandelion', name: '道端のタンポポ', price: 150, icon: '🌼', desc: 'コンクリートの隙間から生えるド根性。' },
+    { id: 'scab', name: '取れたてのかさぶた', price: 200, icon: '🩹', desc: '剥がす時の快感が忘れられない。コレクション用。' },
+    { id: 'mud_ball', name: '光る泥団子', price: 300, icon: '🌑', desc: '3日間磨き続けた最高傑作。落とすと割れる。' },
+    { id: 'random_button', name: '取れたボタン', price: 350, icon: '🔘', desc: 'どの服のか分からないが、捨てる勇気もない。' },
+    { id: 'tangled_earphone', name: '絡まったイヤホン', price: 450, icon: '🎧', desc: 'ポケットに入れただけで知恵の輪になる。ほどくのに3年かかる。' },
+    { id: 'vhs_tape', name: '爪の折れたビデオテープ', price: 500, icon: '📼', desc: '上書き禁止。「金曜ロードショー」と書いてある。' },
 ];
 
 // 状態変数

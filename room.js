@@ -42,7 +42,105 @@ const ITEM_DB = {
     'home_nagoya': { name: 'マイホーム(名古屋)', icon: '🏯' },
     'home_texas': { name: 'マイホーム(テキサス)', icon: '🤠' },
     'honda_jet': { name: 'ホンダジェット', icon: '🛩️' },
-    'baseball_team': { name: '球団', icon: '⚾' }
+    'baseball_team': { name: '球団', icon: '⚾' },
+    // --- ここから追加アイテム ---
+    // --- 伝説・装備 ---
+    'master_sword': { name: '退魔の剣', icon: '🗡️', desc: '森の奥深くで眠っていた伝説の剣。' },
+    'dragon_ball': { name: '四星球', icon: '🟠', desc: 'あと6つ集めると願いが叶うらしい。' },
+    'infinity_gauntlet': { name: '無限のガントレット', icon: '🧤', desc: '指パッチン厳禁。' },
+
+    // --- 宝石・鉱物 ---
+    'amethyst': { name: 'アメジストの原石', icon: '🟣', desc: '魔除けの効果があるとかないとか。' },
+    'diamond_ring': { name: '婚約指輪', icon: '💍', desc: '給料3ヶ月分。箱パカ用。' },
+    'pink_diamond': { name: 'ピンクダイヤモンド', icon: '💎', desc: '奇跡の宝石。オークション級。' },
+    'meteorite': { name: 'ギベオン隕石', icon: '☄️', desc: '宇宙から飛来した鉄の塊。' },
+    'kryptonite': { name: '緑色の鉱石', icon: '🟢', desc: '特定のスーパーヒーローが弱る石。' },
+
+    // --- 過去・遺物 ---
+    'haniwa': { name: '踊る埴輪', icon: '🗿', desc: '古墳時代のアイドル。' },
+    'jomon_pottery': { name: '火焔型土器', icon: '🏺', desc: '縄文人のパッションが爆発している。' },
+    'ammonite': { name: 'アンモナイトの化石', icon: '🐚', desc: '太古の海を支配した生物。' },
+    'trex_skull': { name: 'T-REXの頭骨', icon: '🦖', desc: '博物館クラスの展示物。' },
+    'ninja_scroll': { name: '忍術の巻物', icon: '📜', desc: '秘伝の術が記されているが読めない。' },
+    'katana_masamune': { name: '名刀 正宗', icon: '⚔️', desc: '国宝級の日本刀。切れ味抜群。' },
+
+    // --- 未来・SF ---
+    'hoverboard': { name: 'ホバーボード', icon: '🛹', desc: '宙に浮くスケボー。' },
+    'time_machine': { name: 'タイムマシン', icon: '🏎️', desc: '過去や未来へ行ける車。' },
+    'cryo_pod': { name: '冷凍睡眠カプセル', icon: '⚰️', desc: '300年後の未来で目覚めたいあなたへ。' },
+    'ai_robot': { name: '猫型ロボット', icon: '🤖', desc: '未来の国からやってきた。' },
+    'space_suit': { name: '船外活動用宇宙服', icon: '🧑‍🚀', desc: 'NASA仕様。宇宙でも安心。' },
+
+    // --- 高級食材 ---
+    'matsutake': { name: '国産マツタケ', icon: '🍄', desc: '秋の味覚の王様。香りが段違い。' },
+    'caviar': { name: 'キャビア', icon: '🐟', desc: '世界三大珍味。黒い宝石。' },
+    'vintage_wine': { name: 'ロマネ・コンティ', icon: '🍷', desc: '飲む不動産。' },
+    'sushi_set': { name: '回らない寿司桶', icon: '🍣', desc: '特上。ウニとイクラも入ってる。' },
+    'kobe_beef': { name: '神戸牛ステーキ', icon: '🥩', desc: 'A5ランク。口の中でとろける。' },
+
+    // --- オカルト・UMA ---
+    'tsuchinoko': { name: 'ツチノコのミイラ', icon: '🐍', desc: '懸賞金1億円の夢の跡。' },
+    'moai': { name: 'モアイ像', icon: '🗿', desc: 'イースター島からのお土産。' },
+    'ufo_fragment': { name: 'UFOの破片', icon: '🛸', desc: '未知の金属でできている。' },
+    'cursed_doll': { name: '呪いの日本人形', icon: '🎎', desc: '捨てても戻ってくる。' },
+
+    // --- 超高額・概念 ---
+    'bitcoin_physical': { name: 'ビットコイン(物理)', icon: '₿', desc: 'なぜか硬貨として存在する謎の物体。' },
+    'oil_field': { name: '石油油田', icon: '🛢️', desc: '不労所得の極み。' },
+    'mona_lisa': { name: 'モナ・リザ', icon: '🖼️', desc: 'ルーブル美術館から「借りて」きた。' },
+    'statue_of_liberty': { name: '自由の女神', icon: '🗽', desc: 'ニューヨークから輸送費別でお届け。' },
+    'rocket': { name: 'スペースX ロケット', icon: '🚀', desc: '火星移住計画用。' },
+
+    // --- 芸術・インテリア ---
+    'scream': { name: '叫び', icon: '😱', desc: 'あまりの価格に叫んでいる。' },
+    'thinker': { name: '考える人', icon: '🤔', desc: '「晩ご飯何にしようかな…」' },
+    'red_chair': { name: '赤いパイプ椅子', icon: '🪑', desc: 'プロレス会場から持ってきた。' },
+    'toilet_gold': { name: '純金のトイレ', icon: '🚽', desc: '落ち着いて用を足せない。' },
+    'bonsai': { name: '樹齢500年の盆栽', icon: '🪴', desc: 'おじいちゃんの宝物。' },
+    'moai_tissue': { name: 'モアイのティッシュ', icon: '🗿', desc: '鼻からティッシュが出る。' },
+
+    // --- 和風・JAPAN ---
+    'torii': { name: '千本鳥居', icon: '⛩️', desc: '部屋が京都になる。' },
+    'mount_fuji': { name: '富士山(書き割)', icon: '🗻', desc: '銭湯にあるアレ。' },
+    'samurai_armor': { name: '赤備えの甲冑', icon: '👹', desc: '真田幸村モデル。夜中に動き出す。' },
+    'daruma': { name: '必勝ダルマ', icon: '👺', desc: '選挙の時に。' },
+    'onigiri': { name: 'コンビニおにぎり', icon: '🍙', desc: 'ツナマヨ。日本が生んだ最高の発明。' },
+    'mikoshi': { name: 'お神輿', icon: '🏮', desc: 'ワッショイ！' },
+
+    // --- ネット・ネタ ---
+    'potato_server': { name: 'ジャガイモサーバー', icon: '🥔', desc: '回線が弱い時に使われる比喩。' },
+    'ie_icon': { name: 'IEのアイコン', icon: '🇪', desc: '動作が...遅い...です...。' },
+    'blue_screen': { name: 'ブルースクリーン', icon: '💻', desc: '見てるだけで胃が痛くなる。' },
+    'wi_fi': { name: '最強Wi-Fiルーター', icon: '📶', desc: 'アンテナが8本くらい立ってる。' },
+
+    // --- ランドマーク ---
+    'tokyo_tower': { name: '東京タワー', icon: '🗼', desc: '昭和のシンボル。やっぱり赤が好き。' },
+    'pyramid': { name: 'ピラミッド', icon: '🔺', desc: 'パワーを感じる。' },
+    'sphinx': { name: 'スフィンクス', icon: '🦁', desc: 'なぞなぞを出してくる。' },
+    'eiffel_tower': { name: 'エッフェル塔', icon: '🗼', desc: 'パリの象徴。鉄の貴婦人。' },
+    'stonehenge': { name: 'ストーンヘンジ', icon: '🪨', desc: 'ただの石置場かも。' },
+
+    // --- 愛すべきゴミ・ガラクタ (5円〜500円) ---
+    'bag_closure': { name: 'パンの留めるアレ', icon: '🪝', desc: '正式名称はバッグクロージャー。' },
+    'rubber_band': { name: 'いつかの輪ゴム', icon: '➰', desc: '劣化してベタベタする。' },
+    'bell_mark': { name: 'ベルマーク(0.5点)', icon: '🔔', desc: 'あと100万枚必要。' },
+    'soy_fish': { name: '魚の醤油入れ', icon: '🐟', desc: 'お弁当の隅にいるやつ。' },
+    'baran': { name: 'バラン', icon: '🌿', desc: 'お弁当の仕切り。食べられません。' },
+    'mystery_screw': { name: '謎のネジ', icon: '🔩', desc: '家具組立後に必ず1本余るやつ。' },
+    'ice_pack': { name: '保冷剤', icon: '🧊', desc: '冷凍庫を占拠する大量の保冷剤。' },
+    'pull_tab': { name: '空き缶のプルタブ', icon: '🥫', desc: '車椅子と交換できるという都市伝説。' },
+    'milk_cap': { name: '牛乳瓶のフタ', icon: '⚪', desc: 'メンコにして遊んだ歴戦の勇者。' },
+    'receipt_long': { name: '長すぎるレシート', icon: '🧾', desc: 'クーポンのせいで本体より長い。' },
+    'dead_battery': { name: '使用済み乾電池', icon: '🔋', desc: 'どれが新品かもう分からない。' },
+    'glove_one': { name: '片方だけの軍手', icon: '🧤', desc: '道端によく落ちている。' },
+    'broken_chalk': { name: '折れたチョーク', icon: '🖍️', desc: '先生が黒板に強く書きすぎた末路。' },
+    'dust_bunny': { name: '換気扇のホコリ', icon: '☁️', desc: '大掃除で見なかったことにされる存在。' },
+    'dandelion': { name: '道端のタンポポ', icon: '🌼', desc: 'コンクリートの隙間から生えるド根性。' },
+    'scab': { name: '取れたてのかさぶた', icon: '🩹', desc: 'コレクション用。' },
+    'mud_ball': { name: '光る泥団子', icon: '🌑', desc: '3日間磨き続けた最高傑作。' },
+    'random_button': { name: '取れたボタン', icon: '🔘', desc: 'どの服のか分からない。' },
+    'tangled_earphone': { name: '絡まったイヤホン', icon: '🎧', desc: 'ほどくのに3年かかる。' },
+    'vhs_tape': { name: '爪折れビデオテープ', icon: '📼', desc: '上書き禁止。「金曜ロードショー」' }
 };
 
 // 部屋タイプ定義
