@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マイルーム - バグズ・ライフ</title>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="room.css">
+</head>
+
+<body>
+    <div id="app">
+        <header>
+            <h1>🏠 マイルーム</h1>
+            <div class="header-right">
+                <button id="btn-change-room" class="btn-sub">🔄 部屋を変える</button>
+                <button id="btn-add-item" class="btn-add">➕ アイテムを置く</button>
+                <a href="shop.html" class="btn-back">🛍️ ショップに戻る</a>
+            </div>
+        </header>
+
+        <main>
+            <div class="room-container-wrapper">
+                <!-- 部屋本体 -->
+                <div id="my-room" class="room-container default-bg">
+                    <!-- ここにアイテムが配置されます -->
+                    <div id="placement-layer"></div>
+                </div>
+                <p class="room-instruction">
+                    ドラッグで移動 / クリックで片付ける<br>
+                    <span style="font-size:0.8em; color:#888;">(※部屋の外には置けません)</span>
+                </p>
+            </div>
+        </main>
+
+        <!-- アイテム選択モーダル -->
+        <div id="item-select-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>飾るアイテムを選択</h2>
+                    <button id="btn-close-item-modal" class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="selectable-items-grid" class="items-grid">
+                        <!-- JSで生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ★追加: 部屋選択モーダル -->
+        <div id="room-select-modal" class="modal hidden">
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h2>部屋を選択してください</h2>
+                    <!-- 初回選択時は閉じれないように閉じるボタンなし -->
+                    <button id="btn-close-room-modal" class="modal-close hidden">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="room-select-grid" class="items-grid room-grid">
+                        <!-- JSで生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- マウス追従用のゴースト要素 -->
+        <div id="ghost-item" class="ghost-item hidden"></div>
+    </div>
+
+    <script src="room.js"></script>
+</body>
+
+</html>

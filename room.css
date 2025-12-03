@@ -1,0 +1,395 @@
+:root {
+    --primary-color: #AED581;
+    --text-color: #5D4037;
+    --bg-color: #f0f4f7;
+    --room-width: 800px;
+    --room-height: 600px;
+}
+
+body {
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+    /* テキスト選択防止 */
+}
+
+/* --- ヘッダー周り --- */
+header {
+    background: linear-gradient(135deg, var(--primary-color), #7CB342);
+    padding: 10px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.header-right {
+    display: flex;
+    gap: 15px;
+}
+
+.btn-back,
+.btn-add,
+.btn-sub {
+    text-decoration: none;
+    background: white;
+    color: #558B2F;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.1);
+    font-size: 1rem;
+}
+
+.btn-add {
+    background: #FF8A65;
+    color: white;
+}
+
+.btn-sub {
+    background: #4DB6AC;
+    color: white;
+}
+
+.btn-add:hover,
+.btn-sub:hover,
+.btn-back:hover {
+    transform: translateY(-2px);
+}
+
+.btn-add:active,
+.btn-sub:active,
+.btn-back:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* --- メインエリア --- */
+main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background: #333;
+}
+
+.room-container-wrapper {
+    text-align: center;
+}
+
+/* --- 部屋本体 --- */
+.room-container {
+    width: var(--room-width);
+    height: var(--room-height);
+    position: relative;
+    background-color: #fff;
+    border: 10px solid #5D4037;
+    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5), 0 20px 50px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    transition: background 0.5s;
+
+    /* 画像用設定: 全体をカバー */
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+/* 背景画像設定 (bg1.png, bg2.png, bg3.png が必要) */
+.room-container.default-bg {
+    background-image: url('bg1.png');
+}
+
+.room-container.nagoya-bg {
+    background-image: url('bg2.png');
+    border-color: #FFD700;
+    /* 金色の枠 */
+}
+
+.room-container.texas-bg {
+    background-image: url('bg3.png');
+}
+
+.room-instruction {
+    color: #aaa;
+    margin-top: 10px;
+    font-size: 0.9rem;
+}
+
+/* --- 配置アイテム --- */
+.placed-item {
+    position: absolute;
+    /* font-sizeはJS側で制御しますが、基準サイズを一応指定 */
+    font-size: 4rem;
+    cursor: pointer;
+    /* クリックできることを示す */
+    transition: transform 0.1s;
+    filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.3));
+    touch-action: none;
+
+    /* 選択枠用の設定 */
+    border: 2px dashed transparent;
+    padding: 5px;
+    box-sizing: content-box;
+    transform-origin: center center;
+}
+
+.placed-item:hover {
+    filter: drop-shadow(0 5px 10px rgba(255, 255, 0, 0.5));
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* 選択された状態 */
+.placed-item.selected {
+    border-color: #333;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    z-index: 9999 !important;
+    /* 最前面へ */
+}
+
+.placed-item.dragging {
+    opacity: 0.8;
+}
+
+/* --- 操作メニュー（吹き出し） --- */
+.item-controls {
+    position: absolute;
+    top: -55px;
+    /* アイテムの上に表示 */
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 5px 10px;
+    border-radius: 50px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    z-index: 10000;
+    white-space: nowrap;
+}
+
+/* 吹き出しの足（三角形） */
+.item-controls::after {
+    content: "";
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 8px 8px 0;
+    border-style: solid;
+    border-color: white transparent transparent transparent;
+}
+
+/* 操作ボタン共通 */
+.control-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    cursor: pointer;
+    background: #f0f0f0;
+    color: #333;
+    transition: all 0.2s;
+    outline: none;
+}
+
+.control-btn:hover {
+    background: #e0e0e0;
+    transform: scale(1.1);
+}
+
+.control-btn:active {
+    transform: scale(0.95);
+}
+
+/* 各ボタンの色設定 */
+.btn-move {
+    background: #E3F2FD;
+    color: #1565C0;
+    cursor: move;
+    /* 移動カーソル */
+}
+
+.btn-zoom {
+    background: #E8F5E9;
+    color: #2E7D32;
+    font-weight: bold;
+}
+
+.btn-delete {
+    background: #FFEBEE;
+    color: #C62828;
+}
+
+/* --- ゴースト（新規配置中） --- */
+.ghost-item {
+    position: fixed;
+    font-size: 4rem;
+    pointer-events: none;
+    opacity: 0.7;
+    z-index: 1000;
+    transform: translate(-50%, -50%);
+}
+
+.ghost-item.hidden {
+    display: none;
+}
+
+/* --- モーダル共通 --- */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: white;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+}
+
+.modal-header {
+    background: #AED581;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+.modal-close.hidden {
+    display: none;
+}
+
+.modal-body {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+/* アイテム一覧グリッド */
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 15px;
+}
+
+.item-select-card {
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.item-select-card:hover {
+    background: #f1f8e9;
+    transform: translateY(-2px);
+    border-color: #AED581;
+}
+
+.item-icon {
+    font-size: 3rem;
+    margin-bottom: 5px;
+}
+
+.item-name {
+    font-size: 0.8rem;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.item-count {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* 部屋選択カード */
+.room-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.room-select-card {
+    border: 2px solid #eee;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fff;
+}
+
+.room-select-card:hover {
+    border-color: #FF8A65;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.room-select-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f0f0f0;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 850px) {
+    :root {
+        --room-width: 95vw;
+        --room-height: 70vw;
+    }
+
+    .placed-item {
+        font-size: 3rem;
+    }
+}
