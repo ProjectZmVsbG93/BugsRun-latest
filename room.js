@@ -1,11 +1,9 @@
-// room.js
-
 // 定数
 const INVENTORY_KEY = 'bugsRaceInventory';
 const ROOM_KEY = 'bugsRaceRoom';
 const ROOM_SETTINGS_KEY = 'bugsRaceRoomSettings';
 
-// アイテムデータ (shop.jsと同じ定義)
+// アイテムデータ
 const ITEM_DB = {
     'stone': { name: '道端の石', icon: '🪨' },
     'acorn': { name: 'どんぐり', icon: '🌰' },
@@ -60,10 +58,10 @@ let placedItems = []; // {id, x, y, scale}
 let roomSettings = { bgType: null };
 
 // 操作状態
-let isPlacingNew = false; // 新規配置モード
+let isPlacingNew = false;
 let placingItemId = null;
 
-let selectedItemIndex = null; // 現在選択中のアイテム（-1 or null は未選択）
+let selectedItemIndex = null;
 let isDragging = false;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
@@ -85,10 +83,17 @@ const roomGrid = document.getElementById('room-select-grid');
 
 const ghostItem = document.getElementById('ghost-item');
 
+// --- ユーティリティ: タッチイベント座標取得 ---
+function getClientPos(e) {
+    if (e.touches && e.touches.length > 0) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+    return { x: e.clientX, y: e.clientY };
+}
+
 function init() {
     loadData();
 
-    // 部屋設定がまだない場合は部屋選択モーダルを開く
     if (!roomSettings.bgType) {
         openRoomSelectModal(false);
     } else {
@@ -106,7 +111,6 @@ function loadData() {
     const roomData = localStorage.getItem(ROOM_KEY);
     placedItems = roomData ? JSON.parse(roomData) : [];
 
-    // データ移行: 古いデータにscaleがない場合、1.0を追加
     placedItems.forEach(item => {
         if (typeof item.scale === 'undefined') item.scale = 1.0;
     });
@@ -128,34 +132,38 @@ function setupEventListeners() {
     btnChangeRoom.addEventListener('click', () => openRoomSelectModal(true));
     btnCloseRoomModal.addEventListener('click', () => roomModal.classList.add('hidden'));
 
-    // --- 新規配置モード ---
-    document.addEventListener('mousemove', (e) => {
+    // --- 新規配置モード (マウス & タッチ) ---
+    const handleMove = (e) => {
         if (isPlacingNew) {
-            ghostItem.style.left = e.clientX + 'px';
-            ghostItem.style.top = e.clientY + 'px';
+            // e.preventDefault(); // 必要に応じて
+            const pos = getClientPos(e);
+            ghostItem.style.left = pos.x + 'px';
+            ghostItem.style.top = pos.y + 'px';
         } else if (isDragging) {
             handleDragMove(e);
         }
-    });
+    };
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('touchmove', handleMove, { passive: false });
 
-    // 部屋背景をクリックしたら選択解除
-    roomEl.addEventListener('mousedown', (e) => {
+    // 部屋背景をクリック/タップしたら選択解除
+    const handleBgClick = (e) => {
+        // placementLayer自体か、roomEl自体をクリックした場合のみ解除
         if (e.target === roomEl || e.target === placementLayer) {
-            // 新規配置モードでなければ選択解除
             if (!isPlacingNew) {
                 deselectItem();
+            } else {
+                placeNewItem(e);
             }
         }
-    });
+    };
+    // clickだとドラッグ終わりにも発火しやすいので、明示的に分けるか、
+    // ここではシンプルに click / touchstart を併用
+    roomEl.addEventListener('click', handleBgClick);
 
-    roomEl.addEventListener('click', (e) => {
-        if (isPlacingNew) {
-            placeNewItem(e);
-        }
-    });
-
-    // ドラッグ終了
+    // ドラッグ終了 (マウス & タッチ)
     document.addEventListener('mouseup', handleDragEnd);
+    document.addEventListener('touchend', handleDragEnd);
 }
 
 // --- アイテム配置・描画ロジック ---
@@ -167,7 +175,6 @@ function renderPlacedItems() {
         const info = ITEM_DB[item.id];
         if (!info) return;
 
-        // コンテナ
         const container = document.createElement('div');
         container.className = 'placed-item';
         if (index === selectedItemIndex) container.classList.add('selected');
@@ -176,22 +183,25 @@ function renderPlacedItems() {
         container.style.top = item.y + 'px';
         container.style.zIndex = Math.floor(item.y);
 
-        // 絵文字部分 (scale適用)
         const emojiSpan = document.createElement('span');
         emojiSpan.textContent = info.icon;
         emojiSpan.style.display = 'block';
         emojiSpan.style.transform = `scale(${item.scale})`;
         container.appendChild(emojiSpan);
 
-        // クリックで選択
-        container.addEventListener('mousedown', (e) => {
-            // 既に選択中なら何もしない（ドラッグ操作などはボタン側でやる）
+        // クリック/タップで選択
+        const handleSelect = (e) => {
+            if (isPlacingNew) return;
+            // 既に選択中なら伝播止めない（ボタン操作等のため）
             // 未選択なら選択する
             if (selectedItemIndex !== index) {
-                e.stopPropagation(); // 背景クリックでの解除を防ぐ
+                e.stopPropagation();
+                // e.preventDefault(); // タッチ時の拡大などを防ぐ
                 selectItem(index);
             }
-        });
+        };
+        container.addEventListener('mousedown', handleSelect);
+        container.addEventListener('touchstart', handleSelect, { passive: false });
 
         // 選択中なら操作メニューを表示
         if (index === selectedItemIndex) {
@@ -201,39 +211,39 @@ function renderPlacedItems() {
             // ドラッグ移動ボタン
             const btnMove = document.createElement('button');
             btnMove.className = 'control-btn btn-move';
-            btnMove.innerHTML = '✥'; // 移動記号
-            btnMove.title = 'ドラッグして移動';
-            btnMove.addEventListener('mousedown', (e) => {
-                e.stopPropagation(); // 親のclickイベント等を止める
+            btnMove.innerHTML = '✥';
+
+            const startDragHandler = (e) => {
+                e.stopPropagation();
+                // e.preventDefault(); // スクロール防止
                 startDrag(e, index, container);
-            });
+            };
+            btnMove.addEventListener('mousedown', startDragHandler);
+            btnMove.addEventListener('touchstart', startDragHandler, { passive: false });
 
             // 縮小ボタン
             const btnShrink = document.createElement('button');
             btnShrink.className = 'control-btn btn-zoom';
             btnShrink.innerHTML = '－';
-            btnShrink.addEventListener('mousedown', (e) => {
-                e.stopPropagation();
-                changeScale(index, -0.1);
-            });
+            const shrinkHandler = (e) => { e.stopPropagation(); changeScale(index, -0.1); };
+            btnShrink.addEventListener('mousedown', shrinkHandler);
+            btnShrink.addEventListener('touchstart', shrinkHandler, { passive: true });
 
             // 拡大ボタン
             const btnGrow = document.createElement('button');
             btnGrow.className = 'control-btn btn-zoom';
             btnGrow.innerHTML = '＋';
-            btnGrow.addEventListener('mousedown', (e) => {
-                e.stopPropagation();
-                changeScale(index, 0.1);
-            });
+            const growHandler = (e) => { e.stopPropagation(); changeScale(index, 0.1); };
+            btnGrow.addEventListener('mousedown', growHandler);
+            btnGrow.addEventListener('touchstart', growHandler, { passive: true });
 
             // 削除ボタン
             const btnDelete = document.createElement('button');
             btnDelete.className = 'control-btn btn-delete';
             btnDelete.innerHTML = '🗑️';
-            btnDelete.addEventListener('mousedown', (e) => {
-                e.stopPropagation();
-                deleteItem(index);
-            });
+            const deleteHandler = (e) => { e.stopPropagation(); deleteItem(index); };
+            btnDelete.addEventListener('mousedown', deleteHandler);
+            btnDelete.addEventListener('touchstart', deleteHandler, { passive: true });
 
             controls.appendChild(btnMove);
             controls.appendChild(btnShrink);
@@ -247,13 +257,11 @@ function renderPlacedItems() {
     });
 }
 
-// アイテムを選択状態にする
 function selectItem(index) {
     selectedItemIndex = index;
     renderPlacedItems();
 }
 
-// 選択解除
 function deselectItem() {
     if (selectedItemIndex !== null) {
         selectedItemIndex = null;
@@ -261,19 +269,17 @@ function deselectItem() {
     }
 }
 
-// スケール変更
 function changeScale(index, delta) {
     let current = placedItems[index].scale || 1.0;
     current += delta;
-    if (current < 0.2) current = 0.2; // 最小サイズ制限
-    if (current > 5.0) current = 5.0; // 最大サイズ制限
+    if (current < 0.2) current = 0.2;
+    if (current > 5.0) current = 5.0;
 
-    placedItems[index].scale = parseFloat(current.toFixed(1)); // 浮動小数点誤差対策
+    placedItems[index].scale = parseFloat(current.toFixed(1));
     saveData();
     renderPlacedItems();
 }
 
-// 削除
 function deleteItem(index) {
     const info = ITEM_DB[placedItems[index].id];
     if (confirm(`${info.name} を片付けますか？`)) {
@@ -284,35 +290,33 @@ function deleteItem(index) {
     }
 }
 
-// --- ドラッグ移動ロジック ---
+// --- ドラッグ移動ロジック (マウス & タッチ共通) ---
 
 function startDrag(e, index, element) {
     isDragging = true;
 
-    const roomRect = roomEl.getBoundingClientRect();
+    const pos = getClientPos(e);
     const itemRect = element.getBoundingClientRect();
 
-    // マウス位置と要素の左上とのズレを計算
-    dragOffsetX = e.clientX - itemRect.left;
-    dragOffsetY = e.clientY - itemRect.top;
+    // ズレを計算
+    dragOffsetX = pos.x - itemRect.left;
+    dragOffsetY = pos.y - itemRect.top;
 
-    // ドラッグ中は選択維持
     element.classList.add('dragging');
 }
 
 function handleDragMove(e) {
     if (!isDragging || selectedItemIndex === null) return;
 
-    const roomRect = roomEl.getBoundingClientRect();
-    // 新しい座標（部屋基準）
-    // dragOffsetXは画面全体座標系でのオフセットなので、
-    // e.clientX (画面全体マウスX) - roomRect.left (部屋の左端) - dragOffsetX (マウスと要素のズレ)
-    let newX = e.clientX - roomRect.left - (dragOffsetX);
-    let newY = e.clientY - roomRect.top - (dragOffsetY);
+    // タッチ操作で画面スクロールしないようにする
+    if (e.cancelable) e.preventDefault();
 
-    // 一時的にDOMを動かす（描画負荷軽減のためrenderPlacedItemsは呼ばない）
-    // placementLayerの子要素の該当インデックスを取得
-    // DOMの順序と配列の順序は一致している前提
+    const roomRect = roomEl.getBoundingClientRect();
+    const pos = getClientPos(e);
+
+    let newX = pos.x - roomRect.left - dragOffsetX;
+    let newY = pos.y - roomRect.top - dragOffsetY;
+
     const itemEl = placementLayer.children[selectedItemIndex];
     if (itemEl) {
         itemEl.style.left = newX + 'px';
@@ -327,7 +331,6 @@ function handleDragEnd(e) {
     if (itemEl) {
         itemEl.classList.remove('dragging');
 
-        // 最終的な座標をデータに保存
         const finalX = parseFloat(itemEl.style.left);
         const finalY = parseFloat(itemEl.style.top);
 
@@ -335,19 +338,19 @@ function handleDragEnd(e) {
         placedItems[selectedItemIndex].y = finalY;
 
         saveData();
-        renderPlacedItems(); // Z-indexなどを正しく再計算
+        renderPlacedItems();
     }
 
     isDragging = false;
 }
 
-// --- 新規配置ロジック (既存) ---
+// --- 新規配置ロジック ---
 
 function startPlacingNew(id) {
     itemModal.classList.add('hidden');
     isPlacingNew = true;
     placingItemId = id;
-    deselectItem(); // 既存選択解除
+    deselectItem();
 
     ghostItem.textContent = ITEM_DB[id].icon;
     ghostItem.classList.remove('hidden');
@@ -356,8 +359,10 @@ function startPlacingNew(id) {
 
 function placeNewItem(e) {
     const rect = roomEl.getBoundingClientRect();
-    const x = e.clientX - rect.left - 32;
-    const y = e.clientY - rect.top - 32;
+    const pos = getClientPos(e);
+
+    const x = pos.x - rect.left - 32;
+    const y = pos.y - rect.top - 32;
 
     if (x < 0 || x > rect.width || y < 0 || y > rect.height) return;
 
@@ -365,12 +370,10 @@ function placeNewItem(e) {
         id: placingItemId,
         x: x,
         y: y,
-        scale: 1.0 // 初期スケール
+        scale: 1.0
     });
 
     saveData();
-
-    // 配置直後にそれを選択状態にする
     selectedItemIndex = placedItems.length - 1;
     renderPlacedItems();
 
@@ -380,8 +383,7 @@ function placeNewItem(e) {
     roomEl.style.cursor = 'default';
 }
 
-
-// --- UI関連 (既存) ---
+// --- UI関連 ---
 
 function openItemSelectModal() {
     itemModal.classList.remove('hidden');
