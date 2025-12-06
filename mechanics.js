@@ -52,10 +52,10 @@ function checkMarginCall() {
             // 損失額計算 (元本 - 回収額)
             const loss = pos.margin - returnAmount;
 
-            let msg = `⚠️【強制決済】\n「${pos.name}」の株価急落により追証発生！\n証拠金維持率が30%を下回ったため強制決済されました。\n(損失: -${loss.toLocaleString()}円, 回収: ${returnAmount.toLocaleString()}円)`;
+            let msg = `【強制決済】\n「${pos.name}」の株価急落により、証拠金維持率が30%を下回ったため強制決済されました。\n(損失: -${loss.toLocaleString()}円, 回収: ${returnAmount.toLocaleString()}円)`;
 
             if (returnAmount < 0) {
-                msg += `\n💀 証拠金以上の損失が発生！不足分 ${Math.abs(returnAmount).toLocaleString()}円 が所持金から差し引かれます。`;
+                msg += `\n不足分 ${Math.abs(returnAmount).toLocaleString()}円 が所持金から差し引かれました。`;
             }
 
             messages.push(msg);
@@ -92,7 +92,9 @@ export function setupNewRace() {
     gameState.weather = pickWeather(gameState.currentCourse);
     gameState.volcanoLavaPos = -10;
 
-    const shuffled = [...BUG_TEMPLATES].sort(() => 0.5 - Math.random());
+    const shuffled = [...BUG_TEMPLATES]
+        .filter(t => !t.id.startsWith('index_'))
+        .sort(() => 0.5 - Math.random());
     gameState.bugs = shuffled.slice(0, 5).map(template => {
         const conditionKeys = Object.keys(CONDITIONS);
         const condition = conditionKeys[Math.floor(Math.random() * conditionKeys.length)];
@@ -506,30 +508,35 @@ function processResult(winner) {
     gameState.stats.totalRaces++;
     gameState.stats.totalBet += gameState.bet.amount;
 
-    // --- ここから株価変動処理 ---
+    // --- ここから株価変動・上場廃止処理 ---
+    const STOCK_KEY = 'bugsRaceStocks'; // キー定義
     const storedData = localStorage.getItem(STOCK_KEY);
-    let stockData = storedData ? JSON.parse(storedData) : { prices: {}, streaks: {}, history: {} };
+    // 新しいデータ構造に対応 (lowPriceCounts, relistCounts を追加)
+    let stockData = storedData ? JSON.parse(storedData) : { prices: {}, streaks: {}, history: {}, lowPriceCounts: {}, relistCounts: {} };
 
-    // データ初期化（初めての虫がいる場合など）
+    // データ初期化補正 (既存データに新項目がない場合の対応)
+    if (!stockData.lowPriceCounts) stockData.lowPriceCounts = {};
+    if (!stockData.relistCounts) stockData.relistCounts = {};
+
     BUG_TEMPLATES.forEach(t => {
         if (!stockData.prices[t.id]) {
-            // 初期株価計算: (speed*2 + hp*2 + attack*5) * 2 程度
-            // ランダム要素で多少バラつかせる
+            // 初期上場
             const basePrice = Math.floor((t.speed * 2 + t.hp * 2 + t.attack * 5) * (1.8 + Math.random() * 0.4));
             stockData.prices[t.id] = basePrice;
             stockData.streaks[t.id] = 0;
             stockData.history[t.id] = [basePrice];
+            stockData.lowPriceCounts[t.id] = 0;
+            stockData.relistCounts[t.id] = 0;
         }
     });
 
-    // 順位リスト作成 (ゴール順 > 生存距離順 > 死亡距離順)
+    // 順位リスト作成
     const ranking = [...gameState.bugs].sort((a, b) => {
         if (a.isDead && !b.isDead) return 1;
         if (!a.isDead && b.isDead) return -1;
         return b.currentPos - a.currentPos;
     });
 
-    // 順位ごとの変動率定義
     const rankMultipliers = [1.15, 1.05, 1.0, 0.95, 0.85]; // 1位～5位
 
     ranking.forEach((bug, index) => {
@@ -537,42 +544,120 @@ function processResult(winner) {
         let multiplier = rankMultipliers[index] || 1.0;
 
         // 連勝・連敗ボーナス
-        let streak = stockData.streaks[bug.id];
-
-        // 1位なら連勝カウント、4位以下なら連敗カウント、それ以外リセット
+        let streak = stockData.streaks[bug.id] || 0;
         if (index === 0) {
             streak = streak > 0 ? streak + 1 : 1;
         } else if (index >= 3) {
             streak = streak < 0 ? streak - 1 : -1;
         } else {
-            streak = 0; // 2位・3位はストリークリセット
+            streak = 0;
         }
         stockData.streaks[bug.id] = streak;
 
-        // 連勝数に応じて変動幅を増やす (1連勝につき +2%, 連敗につき -2%)
-        // 最大でも ±20% 程度の補正に抑える
         const streakBonus = Math.min(Math.max(streak * 0.02, -0.2), 0.2);
         multiplier += streakBonus;
 
-        // 乱数要素 (±2%)
+        // ★追加: 再上場ボーナス (relistCount)
+        // 再上場するほど、負けた時の下げ幅が減り、勝った時の上げ幅が増える
+        const relist = stockData.relistCounts[bug.id] || 0;
+        if (relist > 0) {
+            if (multiplier < 1.0) {
+                // 下げ幅緩和: 1回につき +2% (最大で1.0まで)
+                multiplier = Math.min(1.0, multiplier + (relist * 0.02));
+            } else if (multiplier > 1.0) {
+                // 上げ幅強化: 1回につき +3%
+                multiplier += (relist * 0.03);
+            }
+        }
+
+        // 乱数要素
         const randomFluctuation = 0.98 + Math.random() * 0.04;
 
-        // 新価格計算 (最低価格10円)
+        // 新価格計算
         let newPrice = Math.floor(currentPrice * multiplier * randomFluctuation);
         if (newPrice < 10) newPrice = 10;
+
+        // ★追加: 連続10円(ストップ安)カウント & 上場廃止判定
+        if (newPrice === 10) {
+            stockData.lowPriceCounts[bug.id] = (stockData.lowPriceCounts[bug.id] || 0) + 1;
+        } else {
+            stockData.lowPriceCounts[bug.id] = 0; // 価格が上がればリセット
+        }
+
+        // 上場廃止チェック (3回連続10円)
+        if (stockData.lowPriceCounts[bug.id] >= 3) {
+            // 上場廃止処理を実行し、新価格（再上場価格）を取得
+            newPrice = handleDelisting(bug, stockData);
+        }
 
         // データ更新
         stockData.prices[bug.id] = newPrice;
 
-        // 履歴更新 (最新10件)
+        // 履歴更新
         if (!stockData.history[bug.id]) stockData.history[bug.id] = [];
         stockData.history[bug.id].push(newPrice);
         if (stockData.history[bug.id].length > 10) stockData.history[bug.id].shift();
     });
 
-    // 保存
     localStorage.setItem(STOCK_KEY, JSON.stringify(stockData));
-    // ★追加: 株価変動直後に追証チェックを実行
+
+    // ------------------------------------------------
+    // ★追加: 投資信託 (インデックス) の価格再計算
+    // ------------------------------------------------
+
+    // 1. 通常の虫(インデックス以外)の情報を取得
+    // BUG_TEMPLATES は mechanics.js で import されている前提
+    const normalBugs = BUG_TEMPLATES.filter(b => !b.id.startsWith('index_'));
+
+    const currentPrices = normalBugs.map(b => ({
+        id: b.id,
+        price: stockData.prices[b.id] || 10,
+        attack: b.attack // 武闘派判定用
+    }));
+
+    // 価格順にソート (高い順)
+    currentPrices.sort((a, b) => b.price - a.price);
+
+    // 平均価格計算用関数 (小数点以下切り捨て)
+    const calcIndexPrice = (targetBugs) => {
+        if (targetBugs.length === 0) return 10;
+        const sum = targetBugs.reduce((acc, b) => acc + b.price, 0);
+        return Math.floor(sum / targetBugs.length);
+    };
+
+    // (A) MUSHIX: 全銘柄平均
+    const priceMushix = calcIndexPrice(currentPrices);
+
+    // (B) PRIME 5: 上位5銘柄平均
+    const pricePrime = calcIndexPrice(currentPrices.slice(0, 5));
+
+    // (C) MUSCLE: 攻撃力3以上の銘柄平均
+    const muscleBugs = currentPrices.filter(b => b.attack >= 3);
+    const priceMuscle = calcIndexPrice(muscleBugs);
+
+    // データ更新関数
+    const updateIndexStock = (id, price) => {
+        stockData.prices[id] = price;
+
+        // 履歴更新
+        if (!stockData.history[id]) stockData.history[id] = [];
+        stockData.history[id].push(price);
+        if (stockData.history[id].length > 10) stockData.history[id].shift();
+
+        // インデックスは個別の連勝記録や上場廃止カウントは関係ないのでリセット
+        stockData.streaks[id] = 0;
+        stockData.lowPriceCounts[id] = 0;
+    };
+
+    updateIndexStock('index_mushix', priceMushix);
+    updateIndexStock('index_prime', pricePrime);
+    updateIndexStock('index_muscle', priceMuscle);
+
+    // 再保存 (インデックス価格を含めて上書き保存)
+    localStorage.setItem(STOCK_KEY, JSON.stringify(stockData));
+    // ------------------------------------------------
+
+    // 追証チェック
     checkMarginCall();
     // --- 株価変動処理ここまで ---
 
@@ -682,4 +767,71 @@ function processResult(winner) {
     UI.updateWalletDisplay();
     localStorage.setItem('bugsRaceStats', JSON.stringify(gameState.stats));
     UI.updateHomeStats();
+}
+
+// --- 追加: 上場廃止 & 再上場処理 ---
+function handleDelisting(bug, stockData) {
+    const PORTFOLIO_KEY = 'bugsRacePortfolio';
+    const WALLET_KEY = 'bugsRaceWallet';
+
+    // 1. 保有株の強制決済
+    let portfolio = JSON.parse(localStorage.getItem(PORTFOLIO_KEY)) || [];
+    let currentWallet = gameState.wallet;
+    let hasStock = false;
+    let returnTotal = 0;
+
+    // 逆順ループで削除
+    for (let i = portfolio.length - 1; i >= 0; i--) {
+        if (portfolio[i].id === bug.id) {
+            hasStock = true;
+            const pos = portfolio[i];
+
+            // 廃止価格(10円)で強制決済
+            const liquidationPrice = 10;
+            const liquidationValue = liquidationPrice * pos.amount; // 価値はこれだけ
+
+            // 信用取引等の損益計算
+            // 損益 = (10円 - 取得単価) * 株数
+            const profit = (liquidationPrice - pos.buyPrice) * pos.amount;
+            const returnAmount = Math.max(0, pos.margin + profit);
+
+            currentWallet += returnAmount;
+            returnTotal += returnAmount;
+
+            portfolio.splice(i, 1); // 削除
+        }
+    }
+
+    // 変更があれば保存
+    if (hasStock) {
+        localStorage.setItem(PORTFOLIO_KEY, JSON.stringify(portfolio));
+        gameState.wallet = currentWallet;
+        localStorage.setItem(WALLET_KEY, currentWallet);
+        UI.updateWalletDisplay();
+
+        alert(`📉【上場廃止通知】\n「${bug.name}」は経営破綻により上場廃止となりました。\n保有株は整理価格(10円)で強制決済されました。\n(返還額: ${returnTotal.toLocaleString()}円)`);
+    }
+
+    // 2. 再上場処理
+    stockData.relistCounts[bug.id] = (stockData.relistCounts[bug.id] || 0) + 1;
+    const relistCount = stockData.relistCounts[bug.id];
+
+    // カウントリセット
+    stockData.lowPriceCounts[bug.id] = 0;
+    stockData.streaks[bug.id] = 0;
+
+    // 再上場価格の決定
+    // 基本計算式 + 再上場回数に応じた上乗せ (1回につき +100円など)
+    // さらに「新生」感を出すために少し高めに設定
+    const basePrice = Math.floor((bug.speed * 2 + bug.hp * 2 + bug.attack * 5) * 2.0);
+    const bonusPrice = relistCount * 150;
+    const newListingPrice = basePrice + bonusPrice;
+
+    // 履歴をリセットして新価格を入れる（グラフが途切れる演出の代わり）
+    stockData.history[bug.id] = [newListingPrice];
+
+    // ニュース速報風メッセージ（ログに残す）
+    UI.logMessage(null, `📢【速報】${bug.name}が「新生${bug.name}」として再上場しました！(公開価格:${newListingPrice}円)`);
+
+    return newListingPrice;
 }

@@ -113,6 +113,9 @@ main {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
+    align-items: flex-start;
+    /* ★重要: これで上端が揃います */
+    position: relative;
 }
 
 /* 株価ボード */
@@ -190,13 +193,21 @@ main {
 /* 注文パネル */
 .stock-order-panel {
     flex: 1;
-    min-width: 250px;
+    min-width: 300px;
+    /* 少し幅を広げて見やすく */
     background: #e3f2fd;
     padding: 20px;
     border-radius: 10px;
     display: flex;
     flex-direction: column;
     gap: 15px;
+
+    /* ★重要: スクロール追従設定 */
+    position: sticky;
+    top: 90px;
+    /* ヘッダーの高さ分くらい空けて固定 */
+    z-index: 10;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .stock-order-panel h3 {
@@ -560,4 +571,111 @@ main {
 
 .rank-bad {
     color: #8d6e63;
+}
+
+/* 空売りボタン (赤色) */
+.btn-sell-stock-order {
+    background: #e53935;
+    /* 赤 */
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #c62828;
+    /* 濃い赤の影 */
+    width: 100%;
+    /* 横幅いっぱいに */
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.btn-sell-stock-order:hover {
+    background: #ef5350;
+    /* ホバー時は少し明るく */
+}
+
+.btn-sell-stock-order:active {
+    transform: translateY(4px);
+    /* 押した沈み込み */
+    box-shadow: none;
+}
+
+.btn-sell-stock-order:disabled {
+    background: #ccc;
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* チャートキャンバスのレスポンシブ対応 */
+canvas#stock-chart {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* スマホ対応の追加 */
+@media (max-width: 768px) {
+    .stock-container {
+        flex-direction: column-reverse;
+        /* スマホでは注文パネルを上に */
+    }
+
+    .stock-order-panel {
+        position: static;
+        /* スマホでは追従させない */
+        width: 100%;
+    }
+}
+
+/* 1. リストとパネルの上端を揃える */
+.stock-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-start;
+    /* ★これで上端がピタッと揃います */
+    position: relative;
+}
+
+/* 2. 左側のリスト (幅調整) */
+.stock-board {
+    flex: 1 1 60%;
+    min-width: 300px;
+    /* 高さは自動にする（スクロールバーを出さない） */
+    max-height: none;
+    overflow: visible;
+}
+
+/* 3. 右側の注文パネル (追従設定) */
+.stock-order-panel {
+    flex: 1 1 300px;
+    min-width: 280px;
+    background: #e3f2fd;
+    padding: 20px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+
+    /* ★スクロールしてもついてくる設定 */
+    position: sticky;
+    top: 90px;
+    z-index: 10;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* 4. スマホ対応 (縦並びにする) */
+@media (max-width: 850px) {
+    .stock-container {
+        flex-direction: column-reverse;
+        /* スマホでは注文パネルを上に */
+    }
+
+    .stock-order-panel {
+        position: static;
+        /* スマホでは追従解除 */
+        width: 100%;
+    }
 }

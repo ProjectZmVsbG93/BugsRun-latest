@@ -3,6 +3,7 @@ const STORAGE_KEY = 'bugsRaceWallet';
 const INVENTORY_KEY = 'bugsRaceInventory';
 const STOCK_KEY = 'bugsRaceStocks'; // 株価データ
 const PORTFOLIO_KEY = 'bugsRacePortfolio'; // 保有株
+const btnShortSell = document.getElementById('btn-short-sell-stock');
 
 // 虫データ（名前、アイコン、初期株価計算用のステータス）
 const BUG_INFO = {
@@ -19,7 +20,25 @@ const BUG_INFO = {
     'samurai': { name: 'サムライアリ', icon: '⚔️', stats: { speed: 12, hp: 6, attack: 5 } },
     'dung': { name: 'フンコロガシ', icon: '💩', stats: { speed: 10, hp: 12, attack: 2 } },
     'butterfly': { name: 'オオムラサキ', icon: '🦋', stats: { speed: 5, hp: 6, attack: 2 } },
-    'centipede': { name: 'オオムカデ', icon: '🐛', stats: { speed: 15, hp: 8, attack: 4 } }
+    'centipede': { name: 'オオムカデ', icon: '🐛', stats: { speed: 15, hp: 8, attack: 4 } },
+    'index_mushix': {
+        name: 'MUSHIX',
+        icon: '📈',
+        stats: { speed: 0, hp: 0, attack: 0 },
+        desc: '全上場銘柄の平均株価に連動するインデックスファンド。市場全体の成長に投資したい方に。'
+    },
+    'index_prime': {
+        name: 'PRIME 5',
+        icon: '👑',
+        stats: { speed: 0, hp: 0, attack: 0 },
+        desc: '株価上位5銘柄で構成されるエリートファンド。構成銘柄はレースごとに自動で入れ替わります。'
+    },
+    'index_muscle': {
+        name: 'MUSCLE',
+        icon: '💪',
+        stats: { speed: 0, hp: 0, attack: 0 },
+        desc: '攻撃力3以上の「武闘派」虫7種で構成。荒れたレース展開に強い攻撃的ファンド。'
+    }
 };
 
 // 商品リスト
@@ -274,6 +293,7 @@ function updateDisplay() {
 
 // --- 株取引ロジック ---
 
+// --- 修正: インデックス銘柄を先頭に表示する ---
 function renderStockBoard() {
     if (!stockBoard) return;
     stockBoard.innerHTML = '';
@@ -283,7 +303,21 @@ function renderStockBoard() {
         return;
     }
 
-    Object.keys(stockData.prices).forEach(id => {
+    // ★追加: 表示順をソート (インデックス銘柄を優先的に先頭へ)
+    const sortedIds = Object.keys(stockData.prices).sort((a, b) => {
+        const isIndexA = a.startsWith('index_');
+        const isIndexB = b.startsWith('index_');
+
+        // Aがインデックスで、Bが違うなら、Aを前に (-1)
+        if (isIndexA && !isIndexB) return -1;
+        // Bがインデックスで、Aが違うなら、Bを前に (1)
+        if (!isIndexA && isIndexB) return 1;
+
+        // どちらも同じタイプなら定義順（変更なし）
+        return 0;
+    });
+
+    sortedIds.forEach(id => {
         const info = BUG_INFO[id] || { name: '謎の虫', icon: '❓' };
         const price = stockData.prices[id];
         const history = stockData.history[id] || [];
@@ -320,12 +354,21 @@ function selectStock(id) {
     document.querySelectorAll('.stock-card').forEach(card => card.classList.remove('selected'));
     renderStockBoard();
     updateOrderSummary();
+
+    // ★追加: チャートを描画
+    const history = stockData.history[id] || [price]; // 履歴がなければ現在値のみ
+    drawStockChart(history, info.name);
 }
 
+// --- updateOrderSummary 関数を上書き ---
 function updateOrderSummary() {
     if (!orderSummary) return;
+
+    // 選択されていない場合
     if (!selectedStockId) {
         orderSummary.textContent = "銘柄を選択してください";
+        if (btnBuyStock) btnBuyStock.disabled = true;
+        if (btnShortSell) btnShortSell.disabled = true;
         return;
     }
 
@@ -340,6 +383,23 @@ function updateOrderSummary() {
         総額: ${totalCost.toLocaleString()}円<br>
         必要証拠金: <span style="font-size:1.2em; color:#e91e63">${requiredMargin.toLocaleString()}円</span>
     `;
+
+    // ボタンの有効化制御
+    // 買い: 常に可能
+    if (btnBuyStock) btnBuyStock.disabled = false;
+
+    // 空売り: レバレッジが1倍(現物)の場合は不可
+    if (btnShortSell) {
+        if (leverage === 1) {
+            btnShortSell.disabled = true;
+            btnShortSell.title = "現物取引では空売りできません";
+            btnShortSell.style.opacity = 0.5;
+        } else {
+            btnShortSell.disabled = false;
+            btnShortSell.title = "";
+            btnShortSell.style.opacity = 1;
+        }
+    }
 }
 
 // 株購入
@@ -392,6 +452,10 @@ if (btnBuyStock) {
 // --- 修正版: ポートフォリオ描画 & 決済処理 (評価額表示対応) ---
 
 // ポートフォリオ描画関数
+// --- 修正版: ポートフォリオ描画 & 決済処理 (評価額表示対応) ---
+
+// ポートフォリオ描画関数
+// --- 修正版: ポートフォリオ描画 (空売りの損益計算に対応) ---
 function renderPortfolio() {
     if (!portfolioList || !portfolioContainer) return;
     portfolioList.innerHTML = '';
@@ -400,11 +464,22 @@ function renderPortfolio() {
         portfolioContainer.classList.remove('hidden');
         portfolio.forEach((pos, index) => {
             const currentPrice = stockData.prices[pos.id];
+            const type = pos.type || 'buy'; // デフォルトは買い
+            const typeText = type === 'sell' ? '<span style="color:blue">[売]</span>' : '<span style="color:red">[買]</span>';
 
-            // ★ここが追加・変更点: 評価額を見やすく計算して表示
-            const currentValue = currentPrice * pos.amount; // 現在の評価額
-            const initialValue = pos.buyPrice * pos.amount; // 購入時の評価額
-            const profit = currentValue - initialValue;     // 損益
+            // ★修正: 損益計算の分岐を追加
+            let profit = 0;
+            if (type === 'sell') {
+                // 空売り: (売った価格 - 現在価格) * 株数
+                // 価格が上がるとマイナス(損)、下がるとプラス(益)
+                profit = (pos.buyPrice - currentPrice) * pos.amount;
+            } else {
+                // 買い: (現在価格 - 買った価格) * 株数
+                profit = (currentPrice - pos.buyPrice) * pos.amount;
+            }
+
+            // 現在の価値 (時価総額)
+            const currentValue = currentPrice * pos.amount;
 
             const profitClass = profit >= 0 ? 'price-up' : 'price-down';
             const profitSign = profit >= 0 ? '+' : '';
@@ -412,15 +487,14 @@ function renderPortfolio() {
             const div = document.createElement('div');
             div.className = 'portfolio-card';
 
-            // HTML生成 (評価額を目立たせ、ボタンも配置)
             div.innerHTML = `
                 <div class="pf-info">
                     <div style="margin-bottom: 4px;">
-                        <strong>${pos.name}</strong> 
+                        ${typeText} <strong>${pos.name}</strong> 
                         <span style="font-size:0.9em; color:#555;">x${pos.amount} (Lv.${pos.leverage})</span>
                     </div>
                     <div style="font-weight:bold; color:#333; background:#fff3e0; padding:2px 5px; border-radius:4px; display:inline-block; margin-bottom:2px;">
-                        評価額: ${currentValue.toLocaleString()}円
+                        時価: ${currentValue.toLocaleString()}円
                     </div>
                     <div style="font-size:0.85em; color:#666;">
                         (取得単価: ${pos.buyPrice.toLocaleString()}円 → 現在: ${currentPrice.toLocaleString()}円)
@@ -428,7 +502,6 @@ function renderPortfolio() {
                 </div>
                 <div class="pf-right">
                     <div class="pf-pl ${profitClass}">${profitSign}${profit.toLocaleString()}円</div>
-                    <!-- 決済ボタン: ここで sellStock(${index}) を呼び出しています -->
                     <button class="btn-sell-stock" onclick="sellStock(${index})">決済</button>
                 </div>
             `;
@@ -449,15 +522,21 @@ window.sellStock = function (index) {
     }
 
     const currentPrice = stockData.prices[pos.id];
+    const type = pos.type || 'buy'; // デフォルトは買い
 
     // 損益計算: (現在価格 - 購入価格) * 株数
     // ※レバレッジ取引の場合、変動幅 * 株数がそのまま損益になります
-    const profit = (currentPrice - pos.buyPrice) * pos.amount;
+    let profit = 0;
+    if (type === 'sell') {
+        profit = (pos.buyPrice - currentPrice) * pos.amount;
+    } else {
+        profit = (currentPrice - pos.buyPrice) * pos.amount;
+    }
 
     // 返還額 = 証拠金 + 損益
-    const returnAmount = pos.margin + profit;
+    const returnAmount = Math.floor(pos.margin + profit);
 
-    let msg = `決済しますか？\n損益: ${profit.toLocaleString()}円\n`;
+    let msg = `【${type === 'sell' ? '買い戻し' : '売却'}】決済しますか？\n損益: ${profit.toLocaleString()}円\n`;
     if (returnAmount >= 0) {
         msg += `口座への返還: ${returnAmount.toLocaleString()}円`;
     } else {
@@ -719,6 +798,193 @@ if (btnPlayGacha) {
 
 if (btnPlayGacha10) {
     btnPlayGacha10.onclick = () => executeGacha(10);
+}
+
+// --- 追加: 空売り注文処理 ---
+if (btnShortSell) {
+    btnShortSell.addEventListener('click', () => {
+        if (!selectedStockId) return;
+
+        const amount = parseInt(stockAmountInput.value);
+        const leverage = parseFloat(stockLeverageSelect.value);
+        const price = stockData.prices[selectedStockId];
+        const info = BUG_INFO[selectedStockId];
+
+        if (amount <= 0) { alert('株数は1以上で入力してください'); return; }
+
+        // レバレッジ1倍チェック（念のため）
+        if (leverage === 1) { alert('空売りは信用取引(2倍以上)でのみ可能です'); return; }
+
+        const totalCost = price * amount;
+        const requiredMargin = Math.ceil(totalCost / leverage);
+
+        if (wallet < requiredMargin) {
+            alert('所持金（証拠金）が足りません');
+            return;
+        }
+
+        if (!confirm(`【空売り注文】\n${info.name}を${amount}株、レバレッジ${leverage}倍で空売りしますか？\n(下がれば利益、上がれば損失)\n\n必要証拠金: ${requiredMargin.toLocaleString()}円`)) return;
+
+        wallet -= requiredMargin;
+
+        portfolio.push({
+            id: selectedStockId,
+            name: info.name,
+            amount: amount,
+            buyPrice: price,
+            leverage: leverage,
+            margin: requiredMargin,
+            type: 'sell', // ★重要: 売りポジションであることを記録
+            date: new Date().toISOString()
+        });
+
+        saveData();
+        renderPortfolio();
+        alert('空売り注文が約定しました！');
+    });
+}
+
+// --- 修正版: 株価チャート描画関数 (自動目盛り調整付き) ---
+function drawStockChart(history, label) {
+    const canvas = document.getElementById('stock-chart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    // キャンバスをクリア
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // データが少なすぎる場合は描画しない
+    if (history.length < 2) {
+        ctx.font = "14px Arial";
+        ctx.fillStyle = "#888";
+        ctx.textAlign = "center";
+        ctx.fillText("データ収集中...", canvas.width / 2, canvas.height / 2);
+        return;
+    }
+
+    // レイアウト設定
+    const padding = 20; // 上下右の余白
+    const paddingLeft = 50; // 左側の余白（数値用）
+    const w = canvas.width - paddingLeft - padding;
+    const h = canvas.height - padding * 2;
+
+    // データ範囲の計算
+    let maxVal = Math.max(...history);
+    let minVal = Math.min(...history);
+
+    // 上下に少し余裕を持たせる (グラフが天井/底に張り付かないように)
+    const rangeRaw = maxVal - minVal;
+    // 変動がなさすぎる場合の対策
+    const margin = (rangeRaw === 0) ? (maxVal * 0.1) : (rangeRaw * 0.1);
+
+    // 表示用の最大・最小
+    const viewMax = maxVal + margin;
+    const viewMin = Math.max(0, minVal - margin); // 0未満にはしない
+    const viewRange = viewMax - viewMin;
+
+    // --- Y軸の目盛り計算 (スマートな刻み幅) ---
+    // グラフの高さ内に4〜6本程度の線を引きたい
+    const targetTicks = 5;
+    const rawStep = viewRange / targetTicks;
+
+    // 刻み幅をキリの良い数字(1, 2, 5, 10...)に丸める
+    const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+    const magStep = rawStep / magnitude;
+    let step;
+
+    if (magStep <= 1) step = 1 * magnitude;
+    else if (magStep <= 2) step = 2 * magnitude;
+    else if (magStep <= 5) step = 5 * magnitude;
+    else step = 10 * magnitude;
+
+    // 0除算等の安全策
+    if (step <= 0) step = 10;
+
+    // 座標計算関数
+    const getX = (i) => paddingLeft + (i / (history.length - 1)) * w;
+    const getY = (val) => canvas.height - padding - ((val - viewMin) / viewRange) * h;
+
+    // --- グリッド線とY軸ラベルの描画 ---
+    ctx.textAlign = "left"; // ★変更: 左揃え
+    ctx.textBaseline = "middle";
+    ctx.font = "10px sans-serif";
+    ctx.lineWidth = 1;
+
+    // viewMinより少し下から、viewMaxを超えるまでループ
+    const startTick = Math.floor(viewMin / step) * step;
+
+    for (let tick = startTick; tick <= viewMax; tick += step) {
+        if (tick < viewMin) continue; // 範囲外はスキップ
+
+        const y = getY(tick);
+
+        // グリッド線
+        ctx.beginPath();
+        ctx.strokeStyle = "#f0f0f0"; // 薄いグレー
+        ctx.moveTo(paddingLeft, y);
+        ctx.lineTo(canvas.width - padding, y);
+        ctx.stroke();
+
+        // 数値ラベル
+        ctx.fillStyle = "#999";
+        // ★変更: X座標を左端(5px)に固定
+        ctx.fillText(tick.toLocaleString(), 5, y);
+    }
+
+    // --- 折れ線グラフの描画 ---
+    ctx.beginPath();
+
+    // 色決定: 始点より終点が高ければ赤(上昇)、低ければ緑(下落)
+    const isUp = history[history.length - 1] >= history[0];
+    const lineColor = isUp ? "#e53935" : "#43a047";
+
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 2;
+
+    history.forEach((val, i) => {
+        if (i === 0) ctx.moveTo(getX(i), getY(val));
+        else ctx.lineTo(getX(i), getY(val));
+    });
+    ctx.stroke();
+
+    // --- 領域の塗りつぶし (グラデーション) ---
+    const grad = ctx.createLinearGradient(0, padding, 0, canvas.height - padding);
+    grad.addColorStop(0, isUp ? "rgba(229, 57, 53, 0.2)" : "rgba(67, 160, 71, 0.2)");
+    grad.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+    ctx.fillStyle = grad;
+    // 閉じたパスを作るために下辺を追加
+    ctx.lineTo(getX(history.length - 1), canvas.height - padding);
+    ctx.lineTo(getX(0), canvas.height - padding);
+    ctx.fill();
+
+    // --- 点を描画 ---
+    history.forEach((val, i) => {
+        ctx.beginPath();
+        // 最新の点だけ色付き
+        const isLatest = i === history.length - 1;
+        ctx.fillStyle = isLatest ? lineColor : "#fff";
+        ctx.strokeStyle = lineColor;
+
+        // 最新の点は少し大きく
+        const radius = isLatest ? 4 : 2;
+
+        ctx.arc(getX(i), getY(val), radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+    });
+
+    // --- 最新価格の強調表示 ---
+    const lastVal = history[history.length - 1];
+    const lastY = getY(lastVal);
+    const lastX = getX(history.length - 1);
+
+    ctx.font = "bold 12px sans-serif";
+    ctx.fillStyle = lineColor;
+    ctx.textAlign = "right";
+    ctx.textBaseline = "bottom";
+    // グラフの点の少し上に表示
+    ctx.fillText(lastVal.toLocaleString(), lastX, lastY - 8);
 }
 
 // 起動

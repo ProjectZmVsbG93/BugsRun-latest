@@ -99,9 +99,9 @@ export function renderBettingScreen() {
                 ` : `
                 <div class="bet-input-wrap">
                     <input type="number" id="bet-input-${bug.id}" class="bet-input" value="500" disabled style="background: #f0f0f0;">
-                    <span>円 (借金)</span>
+                    <span>円</span>
                 </div>
-                <button class="btn-bet btn-loan-bet" onclick="placeLoanBetOnBug('${bug.id}')">借金ベット</button>
+                <button class="btn-bet btn-loan-bet" onclick="placeLoanBetOnBug('${bug.id}')">ベット</button>
                 `}
             </div>
             <div class="bet-desc-col">

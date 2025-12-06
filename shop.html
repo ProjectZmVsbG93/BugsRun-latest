@@ -45,6 +45,11 @@
                     <!-- 注文パネル -->
                     <div class="stock-order-panel">
                         <h3 id="order-target-name">銘柄を選択してください</h3>
+                        <!-- ★追加: チャート用キャンバス -->
+                        <div class="chart-container"
+                            style="background:white; border-radius:8px; padding:10px; margin-bottom:15px; box-shadow:inset 0 0 10px rgba(0,0,0,0.05);">
+                            <canvas id="stock-chart" width="280" height="150"></canvas>
+                        </div>
                         <div class="order-inputs">
                             <div class="input-group">
                                 <label>株数</label>
@@ -62,7 +67,12 @@
                         <div class="order-summary" id="order-summary">
                             必要証拠金: --- 円
                         </div>
-                        <button id="btn-buy-stock" class="btn-buy-stock" disabled>購入する</button>
+                        <button id="btn-buy-stock" class="btn-buy-stock" disabled>新規買い</button>
+                        <!-- ★追加: 空売りボタン -->
+                        <button id="btn-short-sell-stock" class="btn-sell-stock-order" disabled>
+                            新規売り
+                        </button>
+                        <p style="font-size:0.75rem; color:#666; margin-top:5px;">※新規売りは「信用(2倍)」以上で可能</p>
                     </div>
                 </div>
 
