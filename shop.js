@@ -188,6 +188,7 @@ let selectedStockId = null;
 const walletEl = document.getElementById('wallet-amount');
 const itemsGrid = document.getElementById('items-grid');
 const inventoryGrid = document.getElementById('inventory-grid');
+const sortSelect = document.getElementById('sort-select'); // ソート要素取得
 
 // 株関連DOM
 const stockBoard = document.getElementById('stock-board');
@@ -220,6 +221,11 @@ function init() {
 
     if (stockAmountInput) stockAmountInput.addEventListener('input', updateOrderSummary);
     if (stockLeverageSelect) stockLeverageSelect.addEventListener('change', updateOrderSummary);
+
+    // ★追加: ソート変更時の処理
+    if (sortSelect) {
+        sortSelect.addEventListener('change', renderShopItems);
+    }
 }
 
 // データ読み込み
@@ -337,6 +343,7 @@ function updateOrderSummary() {
 }
 
 // 株購入
+// --- 修正: 10円以下の株購入禁止を追加 ---
 if (btnBuyStock) {
     btnBuyStock.addEventListener('click', () => {
         if (!selectedStockId) return;
@@ -345,6 +352,12 @@ if (btnBuyStock) {
         const leverage = parseFloat(stockLeverageSelect.value);
         const price = stockData.prices[selectedStockId];
         const info = BUG_INFO[selectedStockId];
+
+        // ★追加: 10円以下の株は購入不可にする処理
+        if (price <= 10) {
+            alert(`「${info.name}」は現在取引停止中のため、新規購入できません。(株価10円以下)`);
+            return;
+        }
 
         if (amount <= 0) { alert('株数は1以上で入力してください'); return; }
 
@@ -376,6 +389,9 @@ if (btnBuyStock) {
     });
 }
 
+// --- 修正版: ポートフォリオ描画 & 決済処理 (評価額表示対応) ---
+
+// ポートフォリオ描画関数
 function renderPortfolio() {
     if (!portfolioList || !portfolioContainer) return;
     portfolioList.innerHTML = '';
@@ -384,21 +400,35 @@ function renderPortfolio() {
         portfolioContainer.classList.remove('hidden');
         portfolio.forEach((pos, index) => {
             const currentPrice = stockData.prices[pos.id];
-            const currentValue = currentPrice * pos.amount;
-            const initialValue = pos.buyPrice * pos.amount;
-            const profit = currentValue - initialValue;
+
+            // ★ここが追加・変更点: 評価額を見やすく計算して表示
+            const currentValue = currentPrice * pos.amount; // 現在の評価額
+            const initialValue = pos.buyPrice * pos.amount; // 購入時の評価額
+            const profit = currentValue - initialValue;     // 損益
+
             const profitClass = profit >= 0 ? 'price-up' : 'price-down';
             const profitSign = profit >= 0 ? '+' : '';
 
             const div = document.createElement('div');
             div.className = 'portfolio-card';
+
+            // HTML生成 (評価額を目立たせ、ボタンも配置)
             div.innerHTML = `
                 <div class="pf-info">
-                    <strong>${pos.name}</strong> x${pos.amount} (Lv.${pos.leverage})<br>
-                    取得: ${pos.buyPrice}円 → 現在: ${currentPrice}円
+                    <div style="margin-bottom: 4px;">
+                        <strong>${pos.name}</strong> 
+                        <span style="font-size:0.9em; color:#555;">x${pos.amount} (Lv.${pos.leverage})</span>
+                    </div>
+                    <div style="font-weight:bold; color:#333; background:#fff3e0; padding:2px 5px; border-radius:4px; display:inline-block; margin-bottom:2px;">
+                        評価額: ${currentValue.toLocaleString()}円
+                    </div>
+                    <div style="font-size:0.85em; color:#666;">
+                        (取得単価: ${pos.buyPrice.toLocaleString()}円 → 現在: ${currentPrice.toLocaleString()}円)
+                    </div>
                 </div>
                 <div class="pf-right">
                     <div class="pf-pl ${profitClass}">${profitSign}${profit.toLocaleString()}円</div>
+                    <!-- 決済ボタン: ここで sellStock(${index}) を呼び出しています -->
                     <button class="btn-sell-stock" onclick="sellStock(${index})">決済</button>
                 </div>
             `;
@@ -409,10 +439,22 @@ function renderPortfolio() {
     }
 }
 
+// 決済処理関数 (ボタンから呼ばれる機能)
 window.sellStock = function (index) {
     const pos = portfolio[index];
+    // 万が一データがおかしい場合のエラーハンドリング
+    if (!pos || !stockData.prices[pos.id]) {
+        console.error("決済エラー: データが見つかりません");
+        return;
+    }
+
     const currentPrice = stockData.prices[pos.id];
+
+    // 損益計算: (現在価格 - 購入価格) * 株数
+    // ※レバレッジ取引の場合、変動幅 * 株数がそのまま損益になります
     const profit = (currentPrice - pos.buyPrice) * pos.amount;
+
+    // 返還額 = 証拠金 + 損益
     const returnAmount = pos.margin + profit;
 
     let msg = `決済しますか？\n損益: ${profit.toLocaleString()}円\n`;
@@ -424,22 +466,39 @@ window.sellStock = function (index) {
 
     if (!confirm(msg)) return;
 
+    // 資金反映
     wallet += returnAmount;
+
+    // ポートフォリオから削除
     portfolio.splice(index, 1);
+
+    // 保存と再描画
     saveData();
     renderPortfolio();
+    updateDisplay(); // 所持金表示の更新も忘れずに
+
     alert('決済しました。');
 }
 
 
-// --- 買い物 & ガチャ (修正版) ---
+// --- 買い物 & ガチャ (修正版: ソート対応) ---
 
 function renderShopItems() {
     if (!itemsGrid) return;
     itemsGrid.innerHTML = '';
 
+    // ★追加: ソートロジック
+    let itemsToRender = [...SHOP_ITEMS]; // 元配列をコピー
+    const sortType = sortSelect ? sortSelect.value : 'default';
+
+    if (sortType === 'price_asc') {
+        itemsToRender.sort((a, b) => a.price - b.price);
+    } else if (sortType === 'price_desc') {
+        itemsToRender.sort((a, b) => b.price - a.price);
+    }
+
     // ガチャや在庫と関係なく、ショップアイテムを一覧表示
-    SHOP_ITEMS.forEach(item => {
+    itemsToRender.forEach(item => {
         const div = document.createElement('div');
         div.className = 'item-card';
         div.innerHTML = `
@@ -556,60 +615,110 @@ function getRank(price) {
 if (btnOpenGacha) btnOpenGacha.addEventListener('click', () => gachaModal.classList.remove('hidden'));
 if (btnCloseGacha) btnCloseGacha.addEventListener('click', () => gachaModal.classList.add('hidden'));
 
-if (btnPlayGacha) {
-    btnPlayGacha.addEventListener('click', () => {
-        const COST = 500;
-        if (wallet < COST) { alert('お金が足りません！'); return; }
+// --- 追加: ガチャ実行関数 (単発・10連共通) ---
+// (shop.htmlに10連ボタン <button id="btn-play-gacha-10">...</button> を追加している前提です)
+const btnPlayGacha10 = document.getElementById('btn-play-gacha-10');
 
-        // 支払い
-        wallet -= COST;
-        saveData();
-        updateDisplay();
+function executeGacha(times) {
+    const COST_PER_ONE = 500;
+    const totalCost = COST_PER_ONE * times;
 
-        btnPlayGacha.disabled = true;
-        let count = 0;
-        const interval = setInterval(() => {
-            gachaDisplayIcon.textContent = ['❓', '🌀', '✨', '📦'][count % 4];
-            gachaDisplayText.textContent = '抽選中...';
-            count++;
-        }, 100);
+    if (wallet < totalCost) {
+        alert('お金が足りません！');
+        return;
+    }
 
-        setTimeout(() => {
-            clearInterval(interval);
+    // 支払い
+    wallet -= totalCost;
+    saveData();
+    updateDisplay();
 
-            // 結果抽選
-            const resultItem = getGachaResult();
-            const rank = getRank(resultItem.price);
+    // ボタン無効化
+    if (btnPlayGacha) btnPlayGacha.disabled = true;
+    if (btnPlayGacha10) btnPlayGacha10.disabled = true;
 
-            // 表示更新
-            gachaDisplayIcon.textContent = resultItem.icon;
+    // 演出開始
+    let count = 0;
+    const interval = setInterval(() => {
+        gachaDisplayIcon.textContent = ['❓', '🌀', '✨', '📦'][count % 4];
+        gachaDisplayText.textContent = times > 1 ? '10連抽選中...' : '抽選中...';
+        count++;
+    }, 100);
 
-            // インベントリ追加
-            inventory[resultItem.id] = (inventory[resultItem.id] || 0) + 1;
-            saveData();
-            renderInventory();
+    setTimeout(() => {
+        clearInterval(interval);
 
-            // 履歴
-            const historyItem = document.createElement('div');
-            historyItem.className = 'history-item';
-            historyItem.innerHTML = `<span class="rank-${rank.toLowerCase()}">[${rank}]</span><span>${resultItem.name}</span>`;
-            gachaHistory.prepend(historyItem);
+        let results = [];
+        let bestItem = null; // 演出用に一番レアなやつを保存
+        let bestRankValue = -1; // BAD=0, N=1, R=2...
 
-            // メッセージ
-            if (rank === 'SSR' || rank === 'SR') {
-                gachaDisplayText.textContent = `大当たり！ ${resultItem.name}！`;
-                gachaDisplayText.style.color = '#ffd700';
-            } else if (rank === 'BAD') {
-                gachaDisplayText.textContent = `ハズレ... ${resultItem.name}`;
-                gachaDisplayText.style.color = '#ccc';
-            } else {
-                gachaDisplayText.textContent = `${resultItem.name} を入手`;
-                gachaDisplayText.style.color = 'white';
+        // 抽選ループ
+        for (let i = 0; i < times; i++) {
+            const item = getGachaResult();
+            const rank = getRank(item.price);
+
+            // ランクの数値化（演出用）
+            let rankVal = 0;
+            if (rank === 'N') rankVal = 1;
+            if (rank === 'R') rankVal = 2;
+            if (rank === 'SR') rankVal = 3;
+            if (rank === 'SSR') rankVal = 4;
+
+            if (rankVal > bestRankValue) {
+                bestRankValue = rankVal;
+                bestItem = item;
             }
 
-            btnPlayGacha.disabled = false;
-        }, 2000);
-    });
+            // インベントリ追加
+            inventory[item.id] = (inventory[item.id] || 0) + 1;
+            results.push({ item, rank });
+        }
+
+        saveData();
+        renderInventory();
+
+        // 画面表示（10連の場合は一番良いやつを表示）
+        gachaDisplayIcon.textContent = bestItem.icon;
+
+        if (times > 1) {
+            gachaDisplayText.textContent = `${bestItem.name} など ${times}個を入手！`;
+        } else {
+            // 単発の場合のメッセージ
+            const r = getRank(bestItem.price);
+            if (r === 'SSR' || r === 'SR') {
+                gachaDisplayText.textContent = `大当たり！ ${bestItem.name}！`;
+                gachaDisplayText.style.color = '#ffd700';
+            } else if (r === 'BAD') {
+                gachaDisplayText.textContent = `ハズレ... ${bestItem.name}`;
+                gachaDisplayText.style.color = '#ccc';
+            } else {
+                gachaDisplayText.textContent = `${bestItem.name} を入手`;
+                gachaDisplayText.style.color = 'white';
+            }
+        }
+
+        // 履歴に追加 (新しい順)
+        results.forEach(res => {
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            historyItem.innerHTML = `<span class="rank-${res.rank.toLowerCase()}">[${res.rank}]</span><span>${res.item.name}</span>`;
+            gachaHistory.prepend(historyItem);
+        });
+
+        // ボタン有効化
+        if (btnPlayGacha) btnPlayGacha.disabled = false;
+        if (btnPlayGacha10) btnPlayGacha10.disabled = false;
+
+    }, 1500); // 演出時間
+}
+
+// イベントリスナー登録 (既存のものをこれに置き換え)
+if (btnPlayGacha) {
+    btnPlayGacha.onclick = () => executeGacha(1);
+}
+
+if (btnPlayGacha10) {
+    btnPlayGacha10.onclick = () => executeGacha(10);
 }
 
 // 起動

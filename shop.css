@@ -52,6 +52,19 @@ h2 {
     align-items: center;
 }
 
+/* ★追加: ソートプルダウン */
+.sort-select {
+    font-size: 0.9rem;
+    padding: 5px 10px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    background: white;
+    color: var(--text-color);
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
 .wallet-display {
     background: rgba(255, 255, 255, 0.2);
     padding: 8px 15px;

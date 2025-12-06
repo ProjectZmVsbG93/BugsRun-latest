@@ -8,7 +8,44 @@ import { startRace } from './mechanics.js';
 export function renderBettingScreen() {
     if (!El.bettingBugList) return;
     El.bettingBugList.innerHTML = '';
-    
+
+    // --- ステージ情報 & クイックベットボタン表示 ---
+    const course = gameState.currentCourse;
+    if (course) {
+        // 天候確率の計算
+        const totalWeight = course.weatherTable.reduce((sum, w) => sum + w.weight, 0);
+        const weatherInfo = course.weatherTable.map(w => {
+            const prob = Math.round((w.weight / totalWeight) * 100);
+            return `${w.type}:${prob}%`;
+        }).join(' / ');
+
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'bet-header-info'; // CSSクラス適用
+
+        infoDiv.innerHTML = `
+            <div class="bet-stage-row">
+                <div class="bet-stage-name">🏟️ ${course.name}</div>
+                <div class="bet-weather-rate">天候変化率: ${Math.round(course.weatherChangeRate * 100)}%</div>
+            </div>
+            <div class="bet-weather-detail">
+                内訳: ${weatherInfo}
+            </div>
+            <div class="quick-bet-section">
+                <div class="quick-bet-label">💰 クイックベット</div>
+                <div class="quick-bet-grid">
+                    <button class="quick-bet-btn" onclick="applyQuickBet(0.01)">1%</button>
+                    <button class="quick-bet-btn" onclick="applyQuickBet(0.05)">5%</button>
+                    <button class="quick-bet-btn" onclick="applyQuickBet(0.10)">10%</button>
+                    <button class="quick-bet-btn" onclick="applyQuickBet(0.25)">25%</button>
+                    <button class="quick-bet-btn" onclick="applyQuickBet(0.50)">50%</button>
+                    <button class="quick-bet-btn" onclick="applyQuickBet(1.00)">全額</button>
+                </div>
+            </div>
+        `;
+        El.bettingBugList.appendChild(infoDiv);
+    }
+    // ----------------------------------------------------
+
     const canLoanBet = gameState.wallet < 100;
     const loanNotice = document.getElementById('loan-bet-notice');
     if (loanNotice) {
@@ -30,7 +67,7 @@ export function renderBettingScreen() {
         const potentialWin100 = Math.floor(100 * bug.odds);
         const potentialWin500 = Math.floor(500 * bug.odds);
         const canBet = gameState.wallet >= 100;
-        
+
         row.innerHTML = `
             <div class="bet-info-col">
                 <div class="bug-name">${bug.name}</div>
@@ -47,7 +84,7 @@ export function renderBettingScreen() {
                     <div>Spd: ${speedStars}</div>
                     <div>HP : ${hpStars}</div>
                     <div>Atk: ${atkStars}</div>
-                    <div style="font-size: 0.7rem; color: #999; margin-top: 5px;">
+                    <div class="potential-win">
                         ${canBet ? `100円で勝つと: ${potentialWin100.toLocaleString()}円` : `借金500円で勝つと: ${potentialWin500.toLocaleString()}円`}
                     </div>
                 </div>
@@ -122,20 +159,44 @@ window.placeBetOnBug = function (bugId) {
 
 window.placeLoanBetOnBug = function (bugId) {
     const LOAN_AMOUNT = 500;
-    
+
     const bug = gameState.bugs.find(b => b.id === bugId);
     const potentialWin = Math.floor(LOAN_AMOUNT * bug.odds);
-    
+
     if (confirm(`${bug.name}に借金${LOAN_AMOUNT}円で賭けてレースを開始しますか？\n\n勝った場合の払い戻し: ${potentialWin.toLocaleString()}円 (借金${LOAN_AMOUNT}円を返済後、残りを獲得)\n負けた場合: 借金${LOAN_AMOUNT}円が残ります`)) {
         gameState.bet = { targetId: bugId, amount: LOAN_AMOUNT, odds: bug.odds, isLoan: true };
-        
+
         const buttons = document.querySelectorAll('.btn-bet');
         buttons.forEach(b => b.disabled = true);
-        
+
         document.querySelectorAll('.betting-row').forEach(row => row.classList.remove('selected'));
         const row = document.querySelector(`#bet-input-${bugId}`).closest('.betting-row');
         row.classList.add('selected');
-        
+
         startRace();
     }
+};
+
+// --- ★追加: クイックベット計算処理 ---
+window.applyQuickBet = function (percentage) {
+    // 所持金に対する割合を計算
+    let amount = Math.floor(gameState.wallet * percentage);
+
+    // 100円単位に切り捨て (例: 1250円 -> 1200円)
+    amount = Math.floor(amount / 100) * 100;
+
+    // 最低100円 (所持金が足りていれば)
+    if (amount < 100 && gameState.wallet >= 100) amount = 100;
+
+    // 所持金が100円未満なら0
+    if (gameState.wallet < 100) amount = 0;
+
+    // すべての入力欄に値を反映
+    const inputs = document.querySelectorAll('.bet-input');
+    inputs.forEach(input => {
+        // disabledになっていない（借金ベット用ではない）入力欄のみ更新
+        if (!input.disabled) {
+            input.value = amount;
+        }
+    });
 };

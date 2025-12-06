@@ -7,6 +7,81 @@ import { renderBettingScreen } from './betting.js';
 // レース終了時の勝者を一時保存する変数
 let finishedWinner = null;
 
+// --- 追証・強制決済チェック機能 (完全版・借金対応) ---
+function checkMarginCall() {
+    const PORTFOLIO_KEY = 'bugsRacePortfolio';
+    const STOCK_KEY = 'bugsRaceStocks';
+    const WALLET_KEY = 'bugsRaceWallet';
+
+    // データ読み込み
+    let portfolio = JSON.parse(localStorage.getItem(PORTFOLIO_KEY)) || [];
+    let stockData = JSON.parse(localStorage.getItem(STOCK_KEY)) || { prices: {} };
+
+    // 所持金は gameState.wallet (メモリ上の最新) を使用
+    let currentWallet = gameState.wallet;
+
+    let marginCallOccurred = false;
+    let messages = [];
+
+    // ポートフォリオを逆順にチェック
+    for (let i = portfolio.length - 1; i >= 0; i--) {
+        const pos = portfolio[i];
+
+        // レバレッジ1倍（現物）なら強制決済の対象外
+        if (pos.leverage == 1) continue;
+
+        const currentPrice = stockData.prices[pos.id];
+        // データ不整合エラー回避
+        if (typeof currentPrice === 'undefined') continue;
+
+        // 評価額計算
+        // 損益 = (現在値 - 取得値) * 株数
+        const profit = (currentPrice - pos.buyPrice) * pos.amount;
+        const valuation = pos.margin + profit; // 有効証拠金
+
+        // 維持率判定 (30%以下でロスカット)
+        const maintenanceRate = valuation / pos.margin;
+
+        if (maintenanceRate <= 0.3) {
+            marginCallOccurred = true;
+
+            // ★修正: マイナスもそのまま適用（所持金から減算）
+            const returnAmount = Math.floor(valuation);
+            currentWallet += returnAmount;
+
+            // 損失額計算 (元本 - 回収額)
+            const loss = pos.margin - returnAmount;
+
+            let msg = `⚠️【強制決済】\n「${pos.name}」の株価急落により追証発生！\n証拠金維持率が30%を下回ったため強制決済されました。\n(損失: -${loss.toLocaleString()}円, 回収: ${returnAmount.toLocaleString()}円)`;
+
+            if (returnAmount < 0) {
+                msg += `\n💀 証拠金以上の損失が発生！不足分 ${Math.abs(returnAmount).toLocaleString()}円 が所持金から差し引かれます。`;
+            }
+
+            messages.push(msg);
+
+            // ポートフォリオから削除
+            portfolio.splice(i, 1);
+        }
+    }
+
+    // 変更があれば保存して通知
+    if (marginCallOccurred) {
+        // データを更新
+        localStorage.setItem(PORTFOLIO_KEY, JSON.stringify(portfolio));
+
+        // ウォレットをgameStateとlocalStorageの両方に反映
+        gameState.wallet = currentWallet;
+        localStorage.setItem(WALLET_KEY, currentWallet);
+
+        // 通知
+        alert(messages.join('\n\n'));
+
+        // UI更新 (mechanics.jsでimportしているUIモジュールを使用)
+        UI.updateWalletDisplay();
+    }
+}
+
 // 株価データのキー
 const STOCK_KEY = 'bugsRaceStocks';
 
@@ -497,6 +572,8 @@ function processResult(winner) {
 
     // 保存
     localStorage.setItem(STOCK_KEY, JSON.stringify(stockData));
+    // ★追加: 株価変動直後に追証チェックを実行
+    checkMarginCall();
     // --- 株価変動処理ここまで ---
 
     let won = false; let payout = 0;

@@ -14,6 +14,13 @@
         <header>
             <h1>🛍️ ショッピングモール</h1>
             <div class="header-right">
+                <!-- ★追加: ソート機能 -->
+                <select id="sort-select" class="sort-select">
+                    <option value="default">⭐ おすすめ順</option>
+                    <option value="price_asc">💰 安い順</option>
+                    <option value="price_desc">💎 高い順</option>
+                </select>
+
                 <div class="wallet-display">
                     💰 所持金: <span id="wallet-amount">---</span>円
                 </div>
@@ -82,6 +89,7 @@
                                 style="background: linear-gradient(45deg, #7E57C2, #5E35B1);">ガチャ画面へ</button>
                         </div>
                     </div>
+                    <!-- ここに商品が並ぶ -->
                     <div id="items-grid" style="display: contents;"></div>
                 </div>
             </section>
@@ -109,7 +117,10 @@
                         <div class="gacha-result-text">500円で回せます</div>
                     </div>
                     <div class="gacha-controls">
-                        <button id="btn-play-gacha" class="btn-gacha-action">ガチャを回す (¥500)</button>
+                        <button id="btn-play-gacha" class="btn-gacha-action">単発ガチャ (¥500)</button>
+                        <button id="btn-play-gacha-10" class="btn-gacha-action"
+                            style="background: linear-gradient(to bottom, #ab47bc, #8e24aa); box-shadow: 0 5px 0 #7b1fa2; margin-left: 10px;">10連ガチャ
+                            (¥5,000)</button>
                     </div>
                     <div class="gacha-history-area">
                         <h3>🎁 今回の結果履歴</h3>
@@ -120,9 +131,6 @@
         </div>
     </div>
 
-    <!-- mechanics.js からデータを参照するために type="module" に変更 -->
-    <!-- ただし、shop.js自体はモジュールではないので、bug_data.jsとしてデータを分離するか、 -->
-    <!-- shop.js内にハードコードするか。今回はshop.js内にデータをコピーして独立させる形にします -->
     <script src="shop.js"></script>
 </body>
 
