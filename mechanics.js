@@ -230,7 +230,7 @@ function executeBugAction(bug) {
             if (bug.id === 'shrimp') baseMove = 10 + Math.random() * 10;
             if (bug.id === 'ladybug') baseMove = 15;
             if (bug.id === 'antlion') baseMove = 12 + Math.random() * 10;
-            if (bug.id === 'ant') baseMove = 15;
+            if (bug.id === 'ant') baseMove = 10;
             if (bug.id === 'beetle') baseMove = 5 + Math.random() * 5;
             if (bug.id === 'worm') baseMove = 10 + Math.random() * 5;
             if (bug.id === 'cicada') baseMove = 15 + Math.random() * 5;
@@ -834,4 +834,5 @@ function handleDelisting(bug, stockData) {
     UI.logMessage(null, `📢【速報】${bug.name}が「新生${bug.name}」として再上場しました！(公開価格:${newListingPrice}円)`);
 
     return newListingPrice;
+
 }
