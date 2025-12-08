@@ -119,9 +119,9 @@ export function setupNewRace(mode = 'normal', selectedIds = []) {
         }
 
     } else {
-        // ノーマル (デフォルト): ランダム5匹
+        // ノーマル (デフォルト): ランダム6匹
         const shuffled = [...baseBugs].sort(() => 0.5 - Math.random());
-        participants = shuffled.slice(0, 5);
+        participants = shuffled.slice(0, 6);
     }
     // ----------------------------
 
@@ -873,4 +873,5 @@ function handleDelisting(bug, stockData) {
     UI.logMessage(null, `📢【速報】${bug.name}が「新生${bug.name}」として再上場しました！(公開価格:${newListingPrice}円)`);
 
     return newListingPrice;
+
 }
