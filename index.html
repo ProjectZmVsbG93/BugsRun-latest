@@ -46,7 +46,50 @@
                             <span class="stat-value" id="home-max-win">0円</span>
                         </div>
                     </div>
-                    <button id="game-start-btn" class="btn-primary btn-large">ゲームスタート！</button>
+                    <button id="btn-to-mode-select" class="btn-primary btn-large">ゲームスタート！</button>
+                </div>
+            </section>
+
+            <!-- ★追加: モード選択画面 -->
+            <section id="mode-select-screen" class="screen hidden">
+                <div class="mode-select-container">
+                    <h2 class="result-title">🎮 レースモード選択</h2>
+                    <div class="mode-grid">
+                        <div class="mode-card" id="mode-normal">
+                            <div class="mode-icon">🏇</div>
+                            <h3>ノーマル</h3>
+                            <p>ランダムな5匹による標準的なレース。</p>
+                        </div>
+                        <div class="mode-card" id="mode-1v1">
+                            <div class="mode-icon">⚔️</div>
+                            <h3>タイマン</h3>
+                            <p>好きな2匹を選んで一騎打ち！</p>
+                        </div>
+                        <div class="mode-card" id="mode-all">
+                            <div class="mode-icon">🎪</div>
+                            <h3>オールスター</h3>
+                            <p>全種類の虫が一斉に走るお祭りレース！</p>
+                        </div>
+                    </div>
+                    <button class="btn-back" id="btn-back-from-mode" style="margin-top:20px;">戻る</button>
+                </div>
+            </section>
+
+            <!-- ★追加: 虫指名画面 (タイマン用) -->
+            <section id="bug-select-screen" class="screen hidden">
+                <div class="bug-select-container">
+                    <h2>⚔️ 対戦する2匹を選んでください</h2>
+                    <p id="select-status" style="margin: 10px 0; font-weight:bold;">現在: 0 / 2 匹選択中</p>
+
+                    <div id="bug-selection-grid" class="items-grid"
+                        style="max-height: 60vh; overflow-y: auto; padding: 10px;">
+                        <!-- JSで生成 -->
+                    </div>
+
+                    <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
+                        <button id="btn-confirm-1v1" class="btn-primary" disabled>決定してレースへ</button>
+                        <button class="btn-back" id="btn-back-from-select">戻る</button>
+                    </div>
                 </div>
             </section>
 

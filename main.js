@@ -4,6 +4,7 @@ import * as El from './elements.js';
 import * as UI from './ui.js';
 import { setupNewRace, processTurn } from './mechanics.js';
 import { WEATHER_INFO } from './data.js';
+import { BUG_TEMPLATES } from './data.js';
 
 function init() {
     console.log("Initializing BugsRace (Modules)...");
@@ -163,6 +164,120 @@ function startGameFlow() {
     if (El.revealWeatherIcon) El.revealWeatherIcon.innerHTML = WEATHER_INFO[gameState.weather].icon;
     if (El.revealWeatherText) El.revealWeatherText.textContent = gameState.weather;
 }
+
+// --- モード選択 & タイマン機能のロジック ---
+
+// 1. ホーム画面の「レースに出場する」ボタン
+const btnToMode = document.getElementById('btn-to-mode-select');
+if (btnToMode) {
+    btnToMode.addEventListener('click', () => {
+        UI.switchScreen('mode-select');
+    });
+}
+
+// 2. モード選択画面のカードクリックイベント
+document.getElementById('mode-normal')?.addEventListener('click', () => {
+    // ノーマルモードで開始
+    setupNewRace('normal');
+    UI.switchScreen('betting');
+});
+
+document.getElementById('mode-all')?.addEventListener('click', () => {
+    // オールスターモードで開始
+    setupNewRace('all');
+    UI.switchScreen('betting');
+});
+
+document.getElementById('mode-1v1')?.addEventListener('click', () => {
+    // タイマン: 虫選択画面へ移動
+    renderBugSelectionScreen();
+    UI.switchScreen('bug-select');
+});
+
+// 戻るボタン
+document.getElementById('btn-back-from-mode')?.addEventListener('click', () => {
+    UI.switchScreen('home');
+});
+document.getElementById('btn-back-from-select')?.addEventListener('click', () => {
+    UI.switchScreen('mode-select');
+});
+
+
+// --- タイマン用: 虫選択処理 ---
+let selectedForDuel = []; // 選択された虫のIDを保存
+
+function renderBugSelectionScreen() {
+    const grid = document.getElementById('bug-selection-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    selectedForDuel = []; // リセット
+    updateDuelButtonState();
+
+    // BUG_TEMPLATES は data.js から import されている前提
+    // (もし main.js で import されていない場合は import { BUG_TEMPLATES } from './data.js'; をファイルの先頭に追加してください)
+
+    // インデックス以外の虫を表示
+    const bugs = BUG_TEMPLATES.filter(b => !b.id.startsWith('index_'));
+
+    bugs.forEach(bug => {
+        const div = document.createElement('div');
+        div.className = 'bug-select-card';
+        div.innerHTML = `
+            <div style="font-size:3rem; margin-bottom:5px;">${bug.icon}</div>
+            <div style="font-weight:bold; font-size:0.9rem;">${bug.name}</div>
+            <div style="font-size:0.8rem; color:#666;">攻:${bug.attack} 速:${bug.speed} HP:${bug.hp}</div>
+        `;
+
+        div.onclick = () => toggleBugSelection(bug.id, div);
+        grid.appendChild(div);
+    });
+}
+
+function toggleBugSelection(id, element) {
+    const index = selectedForDuel.indexOf(id);
+
+    if (index >= 0) {
+        // 既に選択されていたら解除
+        selectedForDuel.splice(index, 1);
+        element.classList.remove('selected');
+    } else {
+        // 未選択なら追加 (ただし2匹まで)
+        if (selectedForDuel.length < 2) {
+            selectedForDuel.push(id);
+            element.classList.add('selected');
+        } else {
+            // 既に2匹選んでいる場合は、古い方を消して新しい方を入れる（またはアラート）
+            // ここではシンプルに何もしない（入れ替えたい場合はUIが複雑になるため）
+            // alert("選べるのは2匹までです！"); 
+        }
+    }
+    updateDuelButtonState();
+}
+
+function updateDuelButtonState() {
+    const status = document.getElementById('select-status');
+    const btn = document.getElementById('btn-confirm-1v1');
+
+    if (status) status.textContent = `現在: ${selectedForDuel.length} / 2 匹選択中`;
+
+    if (btn) {
+        if (selectedForDuel.length === 2) {
+            btn.disabled = false;
+            status.style.color = '#e91e63'; // 完了色
+        } else {
+            btn.disabled = true;
+            status.style.color = '#333';
+        }
+    }
+}
+
+// 決定ボタン (1v1開始)
+document.getElementById('btn-confirm-1v1')?.addEventListener('click', () => {
+    if (selectedForDuel.length === 2) {
+        setupNewRace('1v1', selectedForDuel);
+        UI.switchScreen('betting');
+    }
+});
 
 // 起動
 document.addEventListener('DOMContentLoaded', init);

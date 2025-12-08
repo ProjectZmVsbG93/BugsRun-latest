@@ -1728,3 +1728,122 @@ main {
     width: 100%;
     box-sizing: border-box;
 }
+
+/* --- ★追加: モード選択画面 --- */
+.mode-select-container {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+}
+
+.mode-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.mode-card {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 30px 20px;
+    border-radius: 20px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+    border: 3px solid transparent;
+}
+
+.mode-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--primary-color);
+    background: white;
+}
+
+.mode-icon {
+    font-size: 4rem;
+    margin-bottom: 15px;
+}
+
+.mode-card h3 {
+    margin: 0 0 10px 0;
+    color: var(--primary-dark);
+}
+
+.mode-card p {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* --- ★追加: 虫指名画面 --- */
+.bug-select-container {
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.bug-select-card {
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.bug-select-card:hover {
+    transform: scale(1.05);
+    border-color: var(--primary-color);
+}
+
+.bug-select-card.selected {
+    border-color: #ff5252;
+    background-color: #ffebee;
+    box-shadow: 0 0 10px rgba(255, 82, 82, 0.4);
+    transform: scale(1.05);
+}
+
+/* --- 虫指名画面のレイアウト修正 --- */
+
+/* カード内の画像サイズを制限する */
+.bug-select-card img,
+.bug-select-card .bug-img {
+    width: 80px;
+    /* 幅を80pxに固定 */
+    height: 80px;
+    /* 高さも80px */
+    object-fit: contain;
+    /* 縦横比を維持して収める */
+    margin-bottom: 10px;
+}
+
+/* カード自体のレイアウト調整 */
+.bug-select-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    min-height: 150px;
+    /* ある程度の高さを確保 */
+}
+
+/* 選択された時の見た目を強化 */
+.bug-select-card.selected {
+    background-color: #ffebee;
+    border-color: #ff5252;
+    border-width: 3px;
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(255, 82, 82, 0.3);
+}

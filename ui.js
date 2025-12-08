@@ -2,13 +2,27 @@ import { gameState } from './state.js';
 import * as El from './elements.js';
 import { RACE_DISTANCE, WEATHER_INFO } from './data.js';
 
-export function switchScreen(screenName) {
-    Object.values(El.screens).forEach(s => {
+// 画面切り替え機能
+export function switchScreen(screenId) {
+    // すべての画面を非表示にする
+    document.querySelectorAll('.screen').forEach(s => {
         s.classList.remove('active');
         s.classList.add('hidden');
     });
-    El.screens[screenName].classList.remove('hidden');
-    El.screens[screenName].classList.add('active');
+
+    // 指定された画面IDを持つ要素を探す (例: 'home' → 'home-screen')
+    const targetId = `${screenId}-screen`;
+    const target = document.getElementById(targetId);
+
+    // ★修正: 要素が見つかった場合のみクラスを操作する（エラー防止）
+    if (target) {
+        target.classList.remove('hidden');
+        target.classList.add('active');
+        window.scrollTo(0, 0); // 画面トップへスクロール
+    } else {
+        // 見つからない場合はコンソールに警告だけ出す（ゲームは止めない）
+        console.error(`エラー: 画面ID "${targetId}" がHTML内に見つかりません。index.htmlを確認してください。`);
+    }
 }
 
 export function updateWalletDisplay() {

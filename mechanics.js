@@ -85,24 +85,58 @@ function checkMarginCall() {
 // 株価データのキー
 const STOCK_KEY = 'bugsRaceStocks';
 
-export function setupNewRace() {
+// setupNewRace関数 (モード対応版)
+// 引数: mode ('normal', '1v1', 'all'), selectedIds (1v1用のID配列)
+export function setupNewRace(mode = 'normal', selectedIds = []) {
     finishedWinner = null;
 
+    // コースと天気の決定
     gameState.currentCourse = COURSES[Math.floor(Math.random() * COURSES.length)];
     gameState.weather = pickWeather(gameState.currentCourse);
     gameState.volcanoLavaPos = -10;
 
-    const shuffled = [...BUG_TEMPLATES]
-        .filter(t => !t.id.startsWith('index_'))
-        .sort(() => 0.5 - Math.random());
-    gameState.bugs = shuffled.slice(0, 6).map(template => {
+    // インデックス銘柄を除外した虫リスト
+    // (BUG_TEMPLATESはdata.jsからimportされている前提)
+    const baseBugs = BUG_TEMPLATES.filter(t => !t.id.startsWith('index_'));
+    let participants = [];
+
+    // --- モードによる参加者決定 ---
+    if (mode === 'all') {
+        // オールスター: 全員参加 (シャッフルはする)
+        participants = [...baseBugs].sort(() => 0.5 - Math.random());
+
+    } else if (mode === '1v1') {
+        // タイマン: 指定された2匹
+        participants = baseBugs.filter(b => selectedIds.includes(b.id));
+
+        // 安全策: 万が一足りない場合はランダム補充
+        if (participants.length < 2) {
+            const others = baseBugs.filter(b => !selectedIds.includes(b.id));
+            while (participants.length < 2) {
+                const add = others.splice(Math.floor(Math.random() * others.length), 1)[0];
+                participants.push(add);
+            }
+        }
+
+    } else {
+        // ノーマル (デフォルト): ランダム5匹
+        const shuffled = [...baseBugs].sort(() => 0.5 - Math.random());
+        participants = shuffled.slice(0, 5);
+    }
+    // ----------------------------
+
+    // 虫データの生成 (ステータス決定)
+    gameState.bugs = participants.map(template => {
         const conditionKeys = Object.keys(CONDITIONS);
         const condition = conditionKeys[Math.floor(Math.random() * conditionKeys.length)];
         let hp = template.hp;
+
+        // 特定の虫のコンディション補正
         if (template.id === 'isopod' || template.id === 'beetle') {
             if (condition === '不調') hp -= 1;
             if (condition === '絶不調') hp -= 2;
         }
+
         return {
             ...template,
             originalCondition: condition,
@@ -120,12 +154,17 @@ export function setupNewRace() {
             odds: calculateOdds(template, condition)
         };
     });
+
     applyPassiveWeatherEffects();
     if (['月食', '新月'].includes(gameState.weather)) {
         gameState.bugs.forEach(b => b.odds = calculateOdds(b, b.condition));
     }
+
+    // ベット情報の初期化
     gameState.bet = { targetId: null, amount: 0, odds: 0, isLoan: false };
     if (El.betAmountInput) El.betAmountInput.value = 100;
+
+    // 画面描画
     renderBettingScreen();
 }
 
@@ -230,7 +269,7 @@ function executeBugAction(bug) {
             if (bug.id === 'shrimp') baseMove = 10 + Math.random() * 10;
             if (bug.id === 'ladybug') baseMove = 15;
             if (bug.id === 'antlion') baseMove = 12 + Math.random() * 10;
-            if (bug.id === 'ant') baseMove = 10;
+            if (bug.id === 'ant') baseMove = 15;
             if (bug.id === 'beetle') baseMove = 5 + Math.random() * 5;
             if (bug.id === 'worm') baseMove = 10 + Math.random() * 5;
             if (bug.id === 'cicada') baseMove = 15 + Math.random() * 5;
@@ -834,6 +873,4 @@ function handleDelisting(bug, stockData) {
     UI.logMessage(null, `📢【速報】${bug.name}が「新生${bug.name}」として再上場しました！(公開価格:${newListingPrice}円)`);
 
     return newListingPrice;
-
 }
-
