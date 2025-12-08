@@ -95,7 +95,7 @@ export function setupNewRace() {
     const shuffled = [...BUG_TEMPLATES]
         .filter(t => !t.id.startsWith('index_'))
         .sort(() => 0.5 - Math.random());
-    gameState.bugs = shuffled.slice(0, 5).map(template => {
+    gameState.bugs = shuffled.slice(0, 6).map(template => {
         const conditionKeys = Object.keys(CONDITIONS);
         const condition = conditionKeys[Math.floor(Math.random() * conditionKeys.length)];
         let hp = template.hp;
@@ -836,3 +836,4 @@ function handleDelisting(bug, stockData) {
     return newListingPrice;
 
 }
+
