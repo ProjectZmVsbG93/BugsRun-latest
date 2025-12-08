@@ -30,7 +30,13 @@ function init() {
     }
     if (El.toBettingBtn) El.toBettingBtn.addEventListener('click', () => UI.switchScreen('betting'));
     if (El.nextTurnBtn) El.nextTurnBtn.addEventListener('click', processTurn);
-    if (El.nextRaceBtn) El.nextRaceBtn.addEventListener('click', startGameFlow);
+
+    // ★修正: 「次のレースへ」ボタンを押したとき、モード選択画面に戻る
+    if (El.nextRaceBtn) {
+        El.nextRaceBtn.addEventListener('click', () => {
+            UI.switchScreen('mode-select');
+        });
+    }
 
     // Statistics Modal
     if (El.statsToggleBtn) El.statsToggleBtn.addEventListener('click', () => {
